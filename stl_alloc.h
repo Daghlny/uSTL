@@ -13,13 +13,17 @@ namespace uSTL{
 
 /* 
  * \brief the first level allocator that uses \malloc and \free directly
+ *        this is only a class template, the real allocator is \malloc_alloc
  */
 class __malloc_alloc {
 
     private:
-        static void (* __malloc_alloc_oom_handler) ();
+        static void (* __malloc_alloc_oom_handler) ();      //the handler when malloc fails
 
     public:
+        /* 
+         * \brief allocate the memory of \n bytes 
+         */
         static void *allocate(size_t n) {
             void *result = malloc(n);
             if (result == NULL) 
@@ -104,9 +108,7 @@ class __default_alloc_template {
     private:
         static __obj* volatile free_list[__NFREELISTS];
 
-        /*
-         * \brief decide the index of free-lists should use
-         */
+        // calculate the index of given \nbytes in free-lists
         static size_t freelist_index(size_t nbytes) {
             return (((nbytes) + __ALIGN-1) / __ALIGN - 1);
         }
@@ -151,7 +153,10 @@ class __default_alloc_template {
             q->free_list_link = *my_free_list;
             *my_free_list = q;
         }
+
         static void *reallocate(void *p, size_t old_sz, size_t new_sz);
+
+        void* refill(size_t n);
 };
 
 template<bool threads>
@@ -168,5 +173,52 @@ __default_alloc_template<threads>::__obj *volatile
 __default_alloc_template<threads>::free_lists[__NFREELISTS] = 
 {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
+template<bool threads>
+void* __default_alloc_template<threads>::refile(size_t n) {
+    int nobjs = 20;
+    char *chunk = __chunk_alloc(n, nobjs);
+    __obj* volatile *my_free_list;
+    __obj* result;
+    __obj* current_obj, next_obj;
+    int i;
+
+    // if only alloc a block, then return it to caller
+    if (1 == nobjs) 
+        return chunk;
+    my_free_list = free_list + freelist_index(n);
+    result = (__obj*) chunk;
+
+    *my_free_list = next_obj = (obj*) (chunk+n);
+
+    for (i = 1; ; ++i) {
+        current_obj = next_obj;
+        next_obj = (__obj*)((char*)next_obj + n);
+        if (nobjs-1 == i) {
+            current_obj->free_list_link = 0;
+            break;
+        } else {
+            current_obj->free_list_link = next_obj;
+        }
+    }
+    return result;
 }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

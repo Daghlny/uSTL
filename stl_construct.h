@@ -20,18 +20,14 @@ inline void destroy(ForwardIterator first, ForwardIterator last) {
     __destroy(first, last, value_type(first));
 }
 
-/*
- * \brief check whether \T has a trivial destructor 
- */
+// check whether \T has a trivial destructor 
 template <class ForwardIterator, class T>
 inline void __destroy(ForwardIterator first, ForwardIterator last, T *) {
     typedef typename __type_traits<T>::has_trivial_destructor trivial_destructor;
     __destroy_aux(first, last, trivial_destructor());
 }
 
-/*
- * \brief If \T has a non-trivial destructor
- */
+// If \T has a non-trivial destructor
 template<class ForwardIterator>
 inline void __destroy_aux(ForwardIterator first, ForwardIterator last, __false_type) {
     while (first != last) {
@@ -40,9 +36,7 @@ inline void __destroy_aux(ForwardIterator first, ForwardIterator last, __false_t
     }
 }
 
-/*
- * \brief If \T has a trivial destructor
- */
+// If \T has a trivial destructor
 template<class ForwardIterator>
 inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type) {
     //pass
@@ -50,8 +44,4 @@ inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type) {
 
 inline void destroy(char *, char *) {}
 inline void destroy(wchar_t *, wchar_t *) {}
-
-
-
-
 };
