@@ -9,6 +9,8 @@
 #define __THROW_BAD_ALLOC cerr << "out of memory" << endl; exit(1)
 #endif
 
+#include <stdlib.h>
+
 namespace ustl{
 
 /* 
@@ -27,7 +29,7 @@ class __malloc_alloc {
         static void *allocate(size_t n) {
             void *result = malloc(n);
             if (result == NULL) 
-                result = __oom_alloc(n);
+                result = __oom_malloc(n);
             return result;
         }
 
@@ -50,7 +52,7 @@ class __malloc_alloc {
 
         void (*__malloc_alloc::__malloc_alloc_oom_handler)() = 0;
 
-        void *__oom_malloc(size_t n) {
+        static void *__oom_malloc(size_t n) {
             void (* my_alloc_handler)();
             void *result;
             while (true) {
@@ -65,7 +67,7 @@ class __malloc_alloc {
             }
         }
 
-        void *__oom_realloc(void *p, size_t n) {
+        static void *__oom_realloc(void *p, size_t n) {
             void (*my_malloc_handler)();
             void *result;
 
@@ -105,7 +107,6 @@ class __default_alloc_template {
             char client_data[1];
         }
 
-    private:
         static __obj* volatile free_list[__NFREELISTS];
 
         // calculate the index of given \nbytes in free-lists
