@@ -5,6 +5,7 @@
 
 #include "stl_construct.h"
 #include "stl_algorithm.h"
+#include "type_traits.h"
 
 
 namespace ustl {

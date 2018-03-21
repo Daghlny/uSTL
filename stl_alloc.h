@@ -5,11 +5,11 @@
 #include <new>
 #define __THROW_BAD_ALLOC throw bad_alloc
 #elif !defined(__THROW_BAD_ALLOC)
-#include <iostream.h>
+#include <iostream>
 #define __THROW_BAD_ALLOC cerr << "out of memory" << endl; exit(1)
 #endif
 
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace ustl{
 
@@ -17,7 +17,7 @@ namespace ustl{
  * \brief the first level allocator that uses \malloc and \free directly
  *        this is only a class template, the real allocator is \malloc_alloc
  */
-class __malloc_alloc {
+class __malloc_alloc_template {
 
     private:
         static void (* __malloc_alloc_oom_handler) ();      //the handler when malloc fails
@@ -50,7 +50,7 @@ class __malloc_alloc {
             return old;
         }
 
-        void (*__malloc_alloc::__malloc_alloc_oom_handler)() = 0;
+        void (*__malloc_alloc_template::__malloc_alloc_oom_handler)() = 0;
 
         static void *__oom_malloc(size_t n) {
             void (* my_alloc_handler)();
@@ -84,7 +84,7 @@ class __malloc_alloc {
         }
 };
 
-typedef __malloc_alloc malloc_alloc;
+typedef __malloc_alloc_template malloc_alloc;
 
 /*
  * \brief the second level allocator that uses free lists and first level allocator

@@ -3,6 +3,7 @@
 tags
 
 .vs/*
+Debug/*
 *.sln
 *.vcxproj
 *.vcxproj.filters
