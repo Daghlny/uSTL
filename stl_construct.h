@@ -3,7 +3,7 @@
 
 #include <new.h>
 
-namespace uSTL{
+namespace ustl{
 
 template<class T1, class T2>
 inline void construct(T1 *p, const T2& value) {
@@ -45,3 +45,4 @@ inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type) {
 inline void destroy(char *, char *) {}
 inline void destroy(wchar_t *, wchar_t *) {}
 };
+

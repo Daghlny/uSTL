@@ -9,7 +9,7 @@
 #define __THROW_BAD_ALLOC cerr << "out of memory" << endl; exit(1)
 #endif
 
-namespace uSTL{
+namespace ustl{
 
 /* 
  * \brief the first level allocator that uses \malloc and \free directly

@@ -4,7 +4,7 @@
 #include "stl_alloc.h"
 #include "stl_construct.h"
 
-namespace uSTL{
+namespace ustl{
 
 template<typename T>
 class allocator{
