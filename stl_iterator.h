@@ -1,7 +1,8 @@
 
 #pragma once
 
-/* Iterator Level
+/*
+ * ***** Iterator Level ******
  *
  * InputIterator  OutputIterator
  *      |               |
@@ -11,6 +12,8 @@
  *    BidirectionalIterator
  *             |
  *    RandomAccessIterator
+ *
+ *********************************
  */
 
 namespace ustl {

@@ -10,6 +10,8 @@
 
 namespace ustl {
 
+/* uninitialized series functions are used to construct objects with a range */
+
 /*
  * ***************************************************
  * ********* uninitialized_fill_n function ***********

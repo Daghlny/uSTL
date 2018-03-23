@@ -27,9 +27,17 @@ protected:
     iterator _finish;
     iterator _end_of_storage;
 
-    void insert_aux(iterator position, const T& x);
+    void __insert_aux(iterator position, const T& value);
+    void __insert_aux(iterator position, size_type count, const T& value);
+    void reallocate(size_type insert_count);
     void deallocate();
-    void fill_initialize(size_type n, const T& value);
+
+
+    void fill_initialize(size_type n, const T& value) {
+        _start = allocate_and_fill(n, value);
+        _finish = _start + n;
+        _end_of_storage = finish;
+    }
 
 public:
     /*** Constructors ***/
@@ -54,23 +62,25 @@ public:
     }
 
     /* element access */
-    reference front();
-    reference back();
+    reference front() { return *begin(); }
+    reference back() { return *(end() - 1); }
     reference at(size_type pos);
     const_reference at(size_type pos) const;
+
     T* data();
     const T* data() const;
+
     reference operator[](size_type n) {
         return *(begin() + n);
     }
 
 
     /* iterators */
-    iterator begin();
-    iterator end();
+    iterator begin() { return _start; }
+    iterator end() { return _finish; }
 
-    const_iterator cbegin() const;
-    const_iterator cend() const;
+    const_iterator cbegin() const { return _start; }
+    const_iterator cend() const { return _finish; }
 
     reverse_iterator rbegin();
     reverse_iterator rend();
@@ -80,16 +90,22 @@ public:
 
 
     /* capacity */
-    size_type size() const;
-    size_type capacity() const;
-    bool empty() const;
+    size_type size() const { return size_type(end() - begin()); }
+    size_type capacity() const { return size_type(_end_of_storage - begin()); }
+    bool empty() const { return begin() == end(); }
     void reserve(size_type new_cap);
     void shrink_to_fit();
     size_type max_size() const;
 
     /* modifiers */
     void clear();
+
     iterator insert(iterator pos, const T& value);
+    void insert(iterator pos, size_type count, const T& value);
+    template<class InputIt> void insert(iterator pos, InputIt first, InputIt last);
+
+    void __insert_aux(iterator position, const T& value);
+
     void push_back(const T& value);
     void pop_back();
     iterator erase(iterator position);
@@ -98,7 +114,12 @@ public:
     void swap(vector& other);
 
 protected:
-    iterator allocate_and_fill(size_type n, const T& value);
+    iterator allocate_and_fill(size_type n, const T& value) {
+        iterator result = data_allocator::allocate(n);
+        uninitialized_fill_n(result, n, value);
+        return result;
+    }
+
 };
 
 }
