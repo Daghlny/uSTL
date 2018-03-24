@@ -11,16 +11,6 @@
 
 namespace ustl {
 
-template<class T, class Allocator>
-void 
-vector<T, Allocator>::push_back(const T& value) {
-    if (_finish == _end_of_storage) {
-        reallocate(1);
-    }    
-    construct(_finish, value);
-    ++_finish;
-}
-
 
 /* 
  * reallocate the memory of vector, the default size is 2*old_size 
@@ -54,6 +44,52 @@ vector<T, Allocator>::reallocate(size_type insert_count) {
     _end_of_storage = new_start + len;
 
     return _start;
+}
+
+template<class T, class Allocator>
+void
+vector<T, Allcator>::strict_reallocate_copy(size_type insert_count) {
+    const size_type old_size = size();
+    
+    iterator new_start = data_allocator::allocate(insert_count);
+    iterator new_finish = new_start;
+
+    if (insert_count < old_size) {
+        new_finish = uninitialized_copy(_start, _start + insert_count, new_start);
+    }
+    else {
+        new_finish = uninitialized_copy(_start, _finish, new_start);
+    }
+
+    destroy_and_deallocate();
+
+    _start = new_start;
+    _finish = new_finish;
+    _end_of_storage = new_start + insert_count;
+
+    return _start;
+}
+
+template<class T, class Allocator>
+void 
+vector<T, Allocator>::destroy_and_deallocate() {
+    if (capacity() != 0) {
+        data_allocator::destroy(_start, _finish);
+        data_allocator::deallocate(_start, capacity());
+    }
+}
+
+
+
+/************************************/
+/***************iterators************/
+/************************************/
+template<class T, class Allocator>
+vector<T, Allocator>&
+vector<T, Allocator>::operator=(const vector<T, Allocator>& other) {
+    if (this == &other)
+        return *this;
+    
 }
 
 /************************************/
@@ -242,15 +278,37 @@ template<class T, class Allocator>
 template<class InputIt>
 void
 vector<T, Allocator>::__insert_aux(iterator position, InputIt first, InputIt last) {
+
     difference_type location_need = distance(first, last);
     difference_type location_left = _end_of_storage - _finish;
-    if (location_need < location_left) {
-        if (_finish - position <= location_left) {
-            uninitialized_copy(position, _finish, _finish)
-        }
+
+    if (location_need >= location_left) {
+        reallocate(size() + location_need);
     }
+
+    if (_finish - position <= location_need) {
+        /* the [position, _finish] will be moved after _finish */
+        iterator temp_start = uninitialized_copy(first + (_finish - position), last, _finish);
+        uninitialized_copy(position, _finish, temp_start);
+        ustl::copy(first, first + (_finish - position), position);
+    }
+    else {
+        uninitialized_copy(_finish - location_need, _finish, _finish);
+        ustl::copy_backward(position, _finish - location_need, _finish);
+        ustl::copy(first, first + (_finish - position), position);
+    }
+    _finish += location_need;
 }
 
+template<class T, class Allocator>
+void 
+vector<T, Allocator>::push_back(const T& value) {
+    if (_finish == _end_of_storage) {
+        reallocate(1);
+    }    
+    construct(_finish, value);
+    ++_finish;
+}
 
 template<class T, class Allocator>
 void
@@ -272,7 +330,7 @@ vector<T, Allocator>::erase(vector<T, Allocator>::iterator position)
 
 template<class T, class Allocator>
 vector<T, Allocator>::iterator 
-erase(iterator first, iterator last) {
+vector<T, Allocator>::erase(iterator first, iterator last) {
     iterator i = copy(last, _finish, first);
     destroy(i, _finish);
     _finish = _finish - (last - first);
@@ -289,6 +347,22 @@ vector<T, Allocator>::resize(size_type new_size, const T& value)
         insert(end(), new_size - size(), value);
 }
 
+template<class T, class Allocator>
+void 
+vector<T, Allocator>::resize(size_type new_size)
+{
+    resize(new_size, T());
+}
+
+template<class T, class Allocator>
+void
+vector<T, Allocator>::swap(vector& other) {
+    if (other == *this)
+        return;
+    ustl::swap(other._finish, _finish);
+    ustl::swap(other._start, _start);
+    ustl::swap(other._end_of_storage, _end_of_storage);
+}
 
 template<class T, class Allocator>
 vector<T, Allocator>::iterator 

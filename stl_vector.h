@@ -29,6 +29,9 @@ protected:
 
     void __insert_aux(iterator position, const T& value);
     void __insert_aux(iterator position, size_type count, const T& value);
+    template<class InputIt> 
+    void __insert_aux(iterator pos, InputIt first, InputIt last);
+
     void reallocate(size_type insert_count);
     void deallocate();
 
@@ -70,9 +73,28 @@ public:
     T* data();
     const T* data() const;
 
+    /* operators */
     reference operator[](size_type n) {
         return *(begin() + n);
     }
+
+    bool operator==(const vector<T, Allocator>& other) const {
+        if (size() != other.size())
+            return false;
+        iterator ptr1 = _start;
+        iterator ptr2 = other._start;
+        size_type len = size();
+        for (int i = 0; i < len; ++i)
+            if (*ptr1 != *ptr2)
+                return false;
+        return true;
+    }
+
+    bool operator!=(const vector<T, Allocator>& other) const {
+        return !(*this == other);
+    }
+
+    vector<T, Allocator>& operator=(const vector<T, Allocator>& other);
 
 
     /* iterators */
@@ -104,11 +126,10 @@ public:
     void insert(iterator pos, size_type count, const T& value);
     template<class InputIt> void insert(iterator pos, InputIt first, InputIt last);
 
-    void __insert_aux(iterator position, const T& value);
-
     void push_back(const T& value);
     void pop_back();
     iterator erase(iterator position);
+    iterator erase(iterator first, iterator last);
     void resize(size_type new_size, const T& value);
     void resize(size_type new_size);
     void swap(vector& other);
