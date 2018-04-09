@@ -2,8 +2,10 @@
 #pragma once
 
 #include <iostream>
+#include <climits>
 #include "stl_alloc.imph.h"  // for alloc::allocate() and alloc::deallocate()
-#include "stl_type_traits.h" // for value_type() function
+#include "stl_type_traits.h"
+#include "stl_iterator.h"    // for value_type() function
 
 namespace ustl{
 
@@ -42,7 +44,7 @@ class allocator{
         }
 
         size_type max_size() const {
-            return (size_type)0xffffffff;
+            return size_type(UINT_MAX/sizeof(T));
         }
 };
 
@@ -78,6 +80,15 @@ void allocator<T>::construct(T *ptr, const T& value) {
     new(ptr) T(value);
 }
 
+/* 
+ * this function is used in stl_uninitialization.h 
+ */
+template<class T>
+void construct(T *first, T *last) {
+    while (first != last)
+        new (first++) T();
+}
+
 template<class T>
 void allocator<T>::destroy(T* ptr) {
     ptr->~T();
@@ -94,19 +105,6 @@ void allocator<T>::destroy(T *first, size_type n) {
     for (i = 0; i < n; ++i)
         (first++)->~T();
 }
-
-template<class ForwardIterator>
-inline void destroy(ForwardIterator first, ForwardIterator last) {
-    __destroy(first, last, value_type(first));
-}
-
-// check whether \T has a trivial destructor 
-template <class ForwardIterator, class T>
-inline void __destroy(ForwardIterator first, ForwardIterator last, T *) {
-    typedef typename __type_traits<T>::has_trivial_destructor trivial_destructor;
-    __destroy_aux(first, last, trivial_destructor());
-}
-
 // If \T has a non-trivial destructor
 template<class ForwardIterator>
 inline void __destroy_aux(ForwardIterator first, ForwardIterator last, __false_type) {
@@ -120,6 +118,19 @@ inline void __destroy_aux(ForwardIterator first, ForwardIterator last, __false_t
 template<class ForwardIterator>
 inline void __destroy_aux(ForwardIterator, ForwardIterator, __true_type) {
     //pass
+}
+
+// check whether \T has a trivial destructor 
+template <class ForwardIterator, class T>
+inline void __destroy(ForwardIterator first, ForwardIterator last, T *) {
+    typedef typename __type_traits<T>::has_trivial_destructor trivial_destructor;
+    __destroy_aux(first, last, trivial_destructor());
+}
+
+
+template<class ForwardIterator>
+inline void destroy(ForwardIterator first, ForwardIterator last) {
+    __destroy(first, last, __value_type(first));
 }
 
 };

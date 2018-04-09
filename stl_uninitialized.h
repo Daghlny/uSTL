@@ -3,9 +3,9 @@
 
 #include <string.h>
 
-#include "stl_construct.h"
-#include "stl_algorithm.h"
-#include "type_traits.h"
+#include "stl_algorithm.imph.h"
+#include "stl_allocator.h"
+#include "stl_type_traits.h"
 
 
 namespace ustl {
@@ -51,7 +51,7 @@ ForwardIterator __uninitialized_fill_n_aux(ForwardIterator first, Size n, const 
 {
     ForwardIterator cur = first;
     for (; n > 0; --n, ++cur)
-        construct(&*cur, x);
+        allocator<T>::construct(&*cur, x);
     return cur;
 }
 
@@ -61,18 +61,6 @@ ForwardIterator __uninitialized_fill_n_aux(ForwardIterator first, Size n, const 
  * ***************************************************
  */
 
-template<class InputIterator, class ForwardIterator>
-inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result) 
-{
-    return __uninitialized_copy(first, last, result, value_type(result));
-}
-
-template<class InputIterator, class ForwardIterator, class T>
-inline ForwardIterator __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result, T*) 
-{
-    typedef typename __type_traits<T>::is_POD_type is_POD;
-    return __uninitialized_copy_aux(first, last, result, is_POD());
-}
 
 template<class InputIterator, class ForwardIterator>
 inline ForwardIterator __uninitialized_copy_aux(InputIterator first, InputIterator last, ForwardIterator result, __true_type) 
@@ -87,6 +75,20 @@ inline ForwardIterator __uninitialized_copy_aux(InputIterator first, InputIterat
     for (; first != last; ++first, ++cur) 
         construct(&*cur, *first);
     return cur;
+}
+
+template<class InputIterator, class ForwardIterator, class T>
+inline ForwardIterator __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result, T*) 
+{
+    typedef typename __type_traits<T>::is_POD_type is_POD;
+    return __uninitialized_copy_aux(first, last, result, is_POD());
+}
+
+
+template<class InputIterator, class ForwardIterator>
+inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result) 
+{
+    return __uninitialized_copy(first, last, result, __value_type(result));
 }
 
 inline char*
@@ -129,11 +131,11 @@ inline void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last
 }
 
 template<class ForwardIterator, class T>
-inline void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last, const T& x, __falst_type) 
+inline void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last, const T& x, __false_type) 
 {
     ForwardIterator cur = first;
     for (; cur != last; ++cur)
-        construct(&*cur, x);
+        allocator<T>::construct(&*cur, x);
 
 }
 

@@ -3,22 +3,22 @@
 
 #include <limits>
 
-#include "stl_vector.h"
-#include "stl_alloc.h"
+//#include "stl_vector.h"
+
 #include "stl_allocator.h"
-#include "stl_construct.h"
 #include "stl_uninitialized.h"
 
-namespace ustl {
+#include "stl_algorithm.imph.h"
 
+namespace ustl {
 
 /* 
  * reallocate the memory of vector, the default size is 2*old_size 
  * but the new size will not smaller than \insert_count + old_size
  */
 template<class T, class Allocator>
-void
-vector<T, Allocator>::reallocate(size_type insert_count) {
+void vector<T, Allocator>::reallocate(size_type insert_count) {
+
     const size_type old_size = size();
     const size_type len = old_size != 0 ? 2 * old_size : 1;
     len = len > (insert_count + size()) ? len : insert_count + size();
@@ -209,7 +209,7 @@ vector<T, Allocator>::__insert_aux(iterator position, const T& value) {
 
     if (_finish == _end_of_storage) {
         /* if have enough memory */
-        construct(_finish, *(_finish - 1));
+        data_allocator::construct(_finish, *(_finish - 1));
         ++_finish;
         T value_copy = value;
         copy_backward(position, _finish - 2, _finish - 1);
@@ -224,7 +224,7 @@ vector<T, Allocator>::__insert_aux(iterator position, const T& value) {
 
         try {
             new_finish = uninitialized_copy(_start, position, new_start);
-            construct(new_finish, value);
+            data_allocator::construct(new_finish, value);
             +new_finish;
             new_finish = uninitialized_copy(position, _finish, new_finish);
         }
@@ -306,7 +306,7 @@ vector<T, Allocator>::push_back(const T& value) {
     if (_finish == _end_of_storage) {
         reallocate(1);
     }    
-    construct(_finish, value);
+    data_allocator::construct(_finish, value);
     ++_finish;
 }
 
