@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "stl_types.h"
+
 #if 0
 #include <new>
 #define __THROW_BAD_ALLOC throw bad_alloc
@@ -24,7 +26,7 @@ class __malloc_alloc_template {
 
     public:
         /* 
-         * \brief allocate the memory of \n bytes 
+         * allocate the memory of \n bytes 
          */
         static void *allocate(size_t n) {
             void *result = malloc(n);
