@@ -1,5 +1,7 @@
 #pragma once
 
+#define __STL_CLASS_PARTIAL_SPECIALIZATION
+
 #include "stl_config.h"
 
 namespace ustl {

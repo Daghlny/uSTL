@@ -7,6 +7,7 @@
 namespace ustl {
 
     class alloc {
+        public:
         static void *allocate(size_t n);
         static void  deallocate(void *ptr, size_t n);
     };
@@ -20,5 +21,5 @@ namespace ustl {
     alloc::deallocate(void *ptr, size_t n) {
         free(ptr);
     }
-
 }
+
