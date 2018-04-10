@@ -513,5 +513,5 @@ vector<T, Allocator>::swap(vector& other) {
     ustl::swap(other._end_of_storage, _end_of_storage);
 }
 
-}
+}// end of namespace ustl
 
