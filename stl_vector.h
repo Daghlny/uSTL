@@ -2,11 +2,13 @@
 
 #include <stdexcept> // for out-of-range
 #include <limits>    // for numeric_limits
+#include <type_traits> // for is_integral
+#include <iostream>  // for debug
 
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"
 #include "stl_reverseiterator.h"
-#include "stl_algorithm.imph.h"
+#include "stl_algorithm.h"
 
 
 namespace ustl {
@@ -33,22 +35,20 @@ protected:
     iterator _finish;
     iterator _end_of_storage;
 
-    void __insert_aux(iterator position, const T& value);
-    void __insert_aux(iterator position, size_type count, const T& value);
+    iterator __insert_aux(iterator position, const T& value);
+    iterator __insert_aux(iterator position, size_type count, const T& value);
     template<class InputIt> 
-    void __insert_aux(iterator pos, InputIt first, InputIt last);
+    iterator __insert_aux(iterator pos, InputIt first, InputIt last);
+    template<class InputIterator>
+    iterator __insert_aux_template(iterator pos, InputIterator first, InputIterator last, std::true_type);
+    template<class InputIterator>
+    iterator __insert_aux_template(iterator pos, InputIterator first, InputIterator last, std::false_type);
 
-    void reallocate(size_type insert_count);
 
 
-    void fill_initialize(size_type n, const T& value) {
-        _start = allocate_and_fill(n, value);
-        _finish = _start + n;
-        _end_of_storage = _finish;
-    }
 
 public:
-    /*** Constructors ***/
+    /*** constructors ***/
     vector() : _start(0), _finish(0), _end_of_storage(0) {}
     vector(size_type n, const T& value) {
         fill_initialize(n, value);
@@ -63,7 +63,7 @@ public:
         fill_initialize(n, T());
     }
 
-    /*** Destructors ***/
+    /*** destructors ***/
     ~vector() {
         destroy(_start, _finish);
         deallocate();
@@ -128,8 +128,8 @@ public:
     void clear();
 
     iterator insert(iterator pos, const T& value);
-    void insert(iterator pos, size_type count, const T& value);
-    template<class InputIt> void insert(iterator pos, InputIt first, InputIt last);
+    iterator insert(iterator pos, size_type count, const T& value);
+    template<class inputit> iterator insert(iterator pos, inputit first, inputit last);
 
     void push_back(const T& value);
     void pop_back();
@@ -141,15 +141,26 @@ public:
 
 protected:
 
-    /* Memory Conduction */
+    /* memory conduction */
+
+    void fill_initialize(size_type n, const T& value) {
+        _start = allocate_and_fill(n, value);
+        _finish = _start + n;
+        _end_of_storage = _finish;
+    }
+
     iterator allocate_and_fill(size_type n, const T& value) {
-        iterator result = data_allocator::allocate(n);
+        iterator result = data_allocator::allocate(n*sizeof(T));
         uninitialized_fill_n(result, n, value);
         return result;
     }
 
     void strict_reallocate_copy(size_type insert_count);
+
     void destroy_and_deallocate();
+
+    void reallocate(size_type insert_count);
+
     void deallocate() {
         data_allocator::deallocate(_start);
     }
@@ -162,7 +173,7 @@ protected:
 namespace ustl {
 
 /* 
- * reallocate the memory of vector, the default size is 2*old_size 
+ * reallocates the memory of vector, the default size is 2*old_size 
  * but the new size will not smaller than \insert_count + old_size
  */
 template<class T, class Allocator>
@@ -335,75 +346,50 @@ vector<T, Allocator>::clear() {
 template<class T, class Allocator>
 typename vector<T, Allocator>::iterator 
 vector<T,Allocator>::insert(iterator pos, const T& value) {
-    return __insert_aux(pos, value);
+    return __insert_aux(pos, (size_type)1, value);
 }
 
 template<class T, class Allocator>
-void
+typename vector<T, Allocator>::iterator
 vector<T,Allocator>::insert(iterator pos, size_type count, const T& value) {
-    __insert_aux(pos, count, value);
+    return __insert_aux(pos, count, value);
 }
 
 template<class T, class Allocator>
 template<class InputIterator>
-void 
+typename vector<T, Allocator>::iterator
 vector<T, Allocator>::insert(iterator pos, InputIterator first, InputIterator last) {
-    __insert_aux(pos, first, last);
+    return __insert_aux_template(pos, first, last, typename std::is_integral<InputIterator>::type());
 }
 
 template<class T, class Allocator>
-void 
-vector<T, Allocator>::__insert_aux(iterator position, const T& value) {
-
-    if (_finish == _end_of_storage) {
-        /* if have enough memory */
-        data_allocator::construct(_finish, *(_finish - 1));
-        ++_finish;
-        T value_copy = value;
-        copy_backward(position, _finish - 2, _finish - 1);
-        *position = value_copy;
-    }
-    else {
-        const size_type old_size = size();
-        const size_type len = old_size != 0 ? 2 * old_size : 1;
-
-        iterator new_start = data_allocator::allocate(len);
-        iterator new_finish = new_start;
-
-        try {
-            new_finish = uninitialized_copy(_start, position, new_start);
-            data_allocator::construct(new_finish, value);
-            +new_finish;
-            new_finish = uninitialized_copy(position, _finish, new_finish);
-        }
-        catch (...) {
-            // "commit or rollback"
-            destroy(new_start, new_finish);
-            data_allocator::deallocate(new_start, len);
-            throw;
-        }
-
-        destroy(begin(), end());
-        deallocate();
-
-        _start = new_start;
-        _finish = new_finish;
-        _end_of_storage = new_start + len;
-    }
+template<class InputIterator>
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::__insert_aux_template(iterator pos, InputIterator first, InputIterator last, std::true_type) {
+    return __insert_aux(pos, (size_type)first, (T)last);
 }
 
 template<class T, class Allocator>
-void
+template<class InputIterator>
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::__insert_aux_template(iterator pos, InputIterator first, InputIterator last, std::false_type) {
+    return __insert_aux(pos, first, last);
+}
+
+
+template<class T, class Allocator>
+typename vector<T, Allocator>::iterator
 vector<T, Allocator>::__insert_aux(iterator position, size_type count, const T& value) {
 
-    if (count <= 0) return;
+    if (count <= 0) return position;
 
     size_type remain_storage = size_type(_end_of_storage - _finish);
+    size_type index = static_cast<size_type>(position-_start);
 
     if (remain_storage < count) {
         /* we should allocate more memory to store new elements */
-        size_type len = size() + count;
-        reallocate(len);
+        reallocate(count);
+        position = _start+index;
     }
 
     T value_copy = value;
@@ -413,7 +399,6 @@ vector<T, Allocator>::__insert_aux(iterator position, size_type count, const T& 
     if (later_elems > count) {
         uninitialized_copy(_finish - count, _finish, _finish);
         _finish += count;
-        //TODO: the second parameter maybe wrong
         copy_backward(position, old_finish - (later_elems-count), old_finish);
         fill(position, position + count, value_copy);
     }
@@ -424,32 +409,44 @@ vector<T, Allocator>::__insert_aux(iterator position, size_type count, const T& 
         _finish += later_elems;
         fill(position, old_finish, value_copy);
     }
+
+    return position;
 }
 
 template<class T, class Allocator>
 template<class InputIt>
-void
+typename vector<T, Allocator>::iterator
 vector<T, Allocator>::__insert_aux(iterator position, InputIt first, InputIt last) {
+
+    if (first == last)
+        return position;
 
     difference_type location_need = distance(first, last);
     difference_type location_left = _end_of_storage - _finish;
 
+    size_type index = static_cast<size_type>(position-_start);
+
     if (location_need >= location_left) {
+
         reallocate(size() + location_need);
+        position = _start + index;
     }
 
     if (_finish - position <= location_need) {
         /* the [position, _finish] will be moved after _finish */
         iterator temp_start = uninitialized_copy(first + (_finish - position), last, _finish);
         uninitialized_copy(position, _finish, temp_start);
-        ustl::copy(first, first + (_finish - position), position);
+        copy(first, first + (_finish - position), position);
     }
     else {
         uninitialized_copy(_finish - location_need, _finish, _finish);
-        ustl::copy_backward(position, _finish - location_need, _finish);
-        ustl::copy(first, first + (_finish - position), position);
+        copy_backward(position, _finish - location_need, _finish);
+        copy(first, first + (_finish - position), position);
     }
+
     _finish += location_need;
+
+    return position;
 }
 
 template<class T, class Allocator>
@@ -516,5 +513,5 @@ vector<T, Allocator>::swap(vector& other) {
     ustl::swap(other._end_of_storage, _end_of_storage);
 }
 
-
 }
+

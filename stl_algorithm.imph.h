@@ -48,5 +48,23 @@ BidirIt2 copy_backward(BidirIt1 first, BidirIt1 last, BidirIt2 d_last) {
     return d_ret;
 }
 
+/**********************************************/
+/************** Fill Functions ****************/
+/**********************************************/
+template<class ForwardIt, class T>
+void fill(ForwardIt first, ForwardIt last, const T& value) {
+    for (; first != last; ++first)
+        *first = value;
+}
+
+template<class OutputIt, class Size, class T>
+OutputIt fill_n(OutputIt first, Size count, const T& value) {
+    for (Size i = 0; i < count; ++i) {
+        *first++ = value;
+    }
+    return first;
+}
+
+
 }
 

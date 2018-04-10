@@ -13,3 +13,5 @@ BidirIt2 copy_backward(BidirIt1 first, BidirIt1 last, BidirIt2 d_last);
 
 }
 
+#include "stl_algorithm.imph.h"
+
