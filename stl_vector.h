@@ -8,7 +8,7 @@
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"
 #include "stl_reverseiterator.h"
-#include "stl_algorithm.h"
+#include "stl_algorithm.imph.h"
 
 
 namespace ustl {
