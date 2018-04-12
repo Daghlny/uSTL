@@ -1,10 +1,12 @@
 
 #include "../stl_list.h"
 #include <iostream>
+#include <vector>
 
 int main(void)
 {
-    ustl::list<int> L((size_t)10, 2);
+    std::vector<int> nums{1,2,3,4,5,6};
+    ustl::list<int> L(nums.begin(), nums.end());
     std::cout << L.size() << std::endl;
 
     ustl::list<int>::iterator pos = L.begin();
@@ -14,8 +16,9 @@ int main(void)
     std::cout << std::endl;
 
     pos = L.begin();
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10 && pos != L.end(); ++i) {
         if ( int(i & 0x01) == 0 ) {
+            std::cout << "erase: " << *pos << std::endl;
             pos = L.erase(pos);
         }
         else
@@ -42,6 +45,12 @@ int main(void)
     }
     std::cout << std::endl;
     // should be 7 2 42 42 2 2 2 2
+    //
+    ustl::list<int> L2(L);
+    pos = L2.begin();
+    while (pos != L2.end()) 
+        std::cout << *(pos++) << " ";
+    std::cout << std::endl;
 
     return 0;
 }

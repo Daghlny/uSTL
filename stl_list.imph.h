@@ -50,6 +50,50 @@ __list_iterator<T>::operator->(){
     return &(node_ptr->data);
 }
 
+/************* const iterator **************/
+
+template<class T>
+const __list_iterator<T>& 
+__list_iterator<T>::operator++() const{
+    node_ptr = node_ptr->next;
+    return *this;
+}
+
+template<class T>
+const __list_iterator<T>
+__list_iterator<T>::operator++(int) const{
+    __list_iterator<T> ret = *this;
+    node_ptr = node_ptr->next;
+    return ret;
+}
+
+template<class T>
+const __list_iterator<T>&
+__list_iterator<T>::operator--() const {
+    node_ptr = node_ptr->prev;
+    return *this;
+}
+
+template<class T>
+const __list_iterator<T>
+__list_iterator<T>::operator--(int) const {
+    __list_iterator<T> ret = *this;
+    node_ptr = node_ptr->prev;
+    return ret;
+}
+
+template<class T>
+const T&
+__list_iterator<T>::operator*() const{
+    return node_ptr->data;
+}
+
+template<class T>
+const T*
+__list_iterator<T>::operator->() const{
+    return &(node_ptr->data);
+}
+
 template<class T>
 bool
 __list_iterator<T>::operator==(const __list_iterator<T>& rhs) const{
@@ -86,6 +130,14 @@ list<T, Allocator>::delete_node(iterator pos)
 /******************* Basic ***********************/
 /*************************************************/
 
+/************ constructors ************/
+
+template<class T, class Allocator>
+list<T, Allocator>::list(): node_amount(0)
+{
+    tail.node_ptr = head.node_ptr = new_node();
+}
+
 template<class T, class Allocator>
 list<T, Allocator>::list(size_type count, 
                          const T& value):
@@ -109,6 +161,23 @@ list<T, Allocator>::list(size_type count,
     curr->next = tail.node_ptr;
     tail.node_ptr->prev = curr;
 }
+
+template<class T, class Allocator>
+template<class InputIt>
+list<T, Allocator>::list(InputIt first, InputIt last): node_amount(0)
+{
+    head.node_ptr = tail.node_ptr = new_node();
+    insert(tail, first, last);
+}
+
+template<class T, class Allocator>
+list<T, Allocator>::list(const list<T>& other):node_amount(0)
+{
+    head.node_ptr = tail.node_ptr = new_node();
+    insert(head, other.cbegin(), other.cend());
+}
+
+/******************* destructor *****************/
 
 template<class T, class Allocator>
 list<T, Allocator>::~list() {
@@ -148,6 +217,18 @@ list<T, Allocator>::begin() {
 template<class T, class Allocator>
 typename list<T, Allocator>::iterator
 list<T, Allocator>::end() {
+    return tail;
+}
+
+template<class T, class Allocator>
+typename list<T, Allocator>::const_iterator
+list<T, Allocator>::cbegin() const {
+    return head;
+}
+
+template<class T, class Allocator>
+typename list<T, Allocator>::const_iterator
+list<T, Allocator>::cend() const {
     return tail;
 }
 
@@ -213,6 +294,15 @@ list<T, Allocator>::__insert(iterator pos, const T& value)
 {
     pointer insert_node = new_node(value);
     pointer curr_node = pos.node_ptr;
+
+    if ( node_amount == 2 && pos == head ) {
+        curr_node->prev = insert_node;
+        insert_node->prev = curr_node;
+        curr_node->next = insert_node;
+        insert_node->next = curr_node;
+        head--;
+        return iterator(insert_node);
+    }
 
     curr_node->prev->next = insert_node;
     insert_node->prev = curr_node->prev;

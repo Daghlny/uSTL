@@ -40,6 +40,14 @@ struct __list_iterator : public iterator<bidirectional_iterator_tag, T> {
     __list_iterator<T>&  operator--();
     __list_iterator<T>   operator--(int);
 
+    const __list_iterator<T>&  operator++() const ;
+    const __list_iterator<T>   operator++(int) const ; 
+    const __list_iterator<T>&  operator--() const ;
+    const __list_iterator<T>   operator--(int) const;
+
+    const T& operator*() const;
+    const T* operator->() const;
+
     T& operator*();
     T* operator->();
 
@@ -69,11 +77,12 @@ class list{
         typedef simple_allocator<list_node, Allocator> data_allocator;
 
         /* Basic */
-        explicit list(size_type count, const T&value);
-        explicit list(size_type count);
+        list();
+        explicit list(size_type count, const T& value = T());
         template<class InputIt> 
         list(InputIt first, InputIt last);
         list(const list<T>& other);
+
         ~list();
 
         list<T>& operator=(const list& other);
@@ -87,9 +96,9 @@ class list{
 
         /* Iterators */
         iterator begin();
-        const_iterator cbegin();
+        const_iterator cbegin() const;
         iterator end();
-        const_iterator cend();
+        const_iterator cend() const;
         reverse_iterator rbegin();
         const_reverse_iterator crbegin();
         reverse_iterator rend();
