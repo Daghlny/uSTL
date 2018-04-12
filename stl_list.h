@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstddef>
+#include <type_traits>
 
 #include "stl_iterator.h"
 #include "stl_allocator.h"
@@ -42,6 +43,9 @@ struct __list_iterator : public iterator<bidirectional_iterator_tag, T> {
     T& operator*();
     T* operator->();
 
+    bool operator==(const __list_iterator<T>& other) const;
+    bool operator!=(const __list_iterator<T>& other) const;
+
 };
 
 template<class T, class Allocator = allocator<__list_node<T> > >
@@ -62,7 +66,7 @@ class list{
         typedef list_node*                          pointer;
         typedef const list_node*                    const_pointer;
 
-        typedef simple_allocator<__list_node<T>, Allocator> data_allocator;
+        typedef simple_allocator<list_node, Allocator> data_allocator;
 
         /* Basic */
         explicit list(size_type count, const T&value);
@@ -102,7 +106,7 @@ class list{
         iterator insert(iterator pos, const T& value);
         iterator insert(iterator pos, size_type count, const T& value);
         template<class InputIt>
-        iterator insert(const_iterator pos, InputIt first, InputIt last);
+        iterator insert(iterator pos, InputIt first, InputIt last);
 
         iterator erase(iterator pos);
         iterator erase(iterator first, iterator last);
@@ -125,8 +129,23 @@ class list{
     private:
         /* Memory */
         pointer new_node(const T& value = T());
-        
+        void delete_node(iterator pos);
 
+        /* Modifiers */
+        iterator __erase(iterator pos);
+        iterator __erase(iterator first, iterator last);
+
+        iterator __insert(iterator pos, const T& value);
+        iterator __insert(iterator pos, size_type count, const T& value);
+        template<class InputIt>
+        iterator __insert(iterator pos, InputIt first, InputIt last);
+        
+        template<class InputIt>
+        iterator __insert_template(iterator pos, InputIt first, InputIt last, std::true_type);
+        template<class InputIt>
+        iterator __insert_template(iterator pos, InputIt first, InputIt last, std::false_type);
+        template<class InputIt>
+        iterator __insert_aux(iterator pos, InputIt first, InputIt last);
 
 };
 
