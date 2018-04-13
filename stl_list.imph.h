@@ -50,63 +50,23 @@ __list_iterator<T>::operator->(){
     return &(node_ptr->data);
 }
 
-/************* const iterator **************/
-
 template<class T>
-const __list_iterator<T>& 
-__list_iterator<T>::operator++() const{
-    node_ptr = node_ptr->next;
-    return *this;
-}
-
-template<class T>
-const __list_iterator<T>
-__list_iterator<T>::operator++(int) const{
-    __list_iterator<T> ret = *this;
-    node_ptr = node_ptr->next;
-    return ret;
-}
-
-template<class T>
-const __list_iterator<T>&
-__list_iterator<T>::operator--() const {
-    node_ptr = node_ptr->prev;
-    return *this;
-}
-
-template<class T>
-const __list_iterator<T>
-__list_iterator<T>::operator--(int) const {
-    __list_iterator<T> ret = *this;
-    node_ptr = node_ptr->prev;
-    return ret;
-}
-
-template<class T>
-const T&
-__list_iterator<T>::operator*() const{
-    return node_ptr->data;
-}
-
-template<class T>
-const T*
-__list_iterator<T>::operator->() const{
-    return &(node_ptr->data);
+bool
+__list_iterator<T>::operator==(const _self& other) const {
+    return node_ptr == other.node_ptr;
 }
 
 template<class T>
 bool
-__list_iterator<T>::operator==(const __list_iterator<T>& rhs) const{
-    return (node_ptr == rhs.node_ptr);
-}
-
-template<class T>
-bool
-__list_iterator<T>::operator!=(const __list_iterator<T>& rhs) const{
-    return !(this->operator==(rhs));
+__list_iterator<T>::operator!=(const _self& other) const {
+    return node_ptr != other.node_ptr;
 }
 
 }
+
+/***********************************************
+ *                ustl::list                   *
+ ***********************************************/
 
 namespace ustl{
 
@@ -223,13 +183,13 @@ list<T, Allocator>::end() {
 template<class T, class Allocator>
 typename list<T, Allocator>::const_iterator
 list<T, Allocator>::cbegin() const {
-    return head;
+    return const_iterator(head.node_ptr);
 }
 
 template<class T, class Allocator>
 typename list<T, Allocator>::const_iterator
 list<T, Allocator>::cend() const {
-    return tail;
+    return const_iterator(tail.node_ptr);
 }
 
 /********************************************/

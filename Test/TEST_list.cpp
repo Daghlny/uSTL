@@ -52,5 +52,9 @@ int main(void)
         std::cout << *(pos++) << " ";
     std::cout << std::endl;
 
+    ustl::list<int>::const_iterator it = L2.cbegin();
+    ++it;
+    std::cout << *it << std::endl;
+
     return 0;
 }

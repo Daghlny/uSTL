@@ -30,9 +30,11 @@ struct __list_node {
 template<class T>
 struct __list_iterator : public iterator<bidirectional_iterator_tag, T> {
 
+    typedef __list_iterator<T> _self;
+
     __list_node<T>* node_ptr;  
 
-    explicit __list_iterator(__list_node<T>* _ptr):node_ptr(_ptr){}
+    __list_iterator(__list_node<T>* _ptr):node_ptr(_ptr){}
     __list_iterator():node_ptr(NULL){}
 
     __list_iterator<T>&  operator++();
@@ -51,10 +53,71 @@ struct __list_iterator : public iterator<bidirectional_iterator_tag, T> {
     T& operator*();
     T* operator->();
 
-    bool operator==(const __list_iterator<T>& other) const;
-    bool operator!=(const __list_iterator<T>& other) const;
+    bool operator==(const _self& other) const;
+    bool operator!=(const _self& other) const;
 
 };
+
+
+template<typename T>
+struct __list_const_iterator : public iterator<bidirectional_iterator_tag, T> {
+
+    typedef __list_const_iterator<T>  _self;
+
+    typedef T value_type;
+    typedef const __list_node<T> node;
+    typedef __list_iterator<T> iterator;
+    typedef const T* pointer;
+    typedef const T& reference;
+
+    const __list_node<T> * node_ptr;
+
+    __list_const_iterator() : node_ptr() {}
+    explicit __list_const_iterator(node* _x) : node_ptr(_x) {}
+    //explicit __list_const_iterator(__list_node<T>* const _x) : node_ptr(_x) {}
+    __list_const_iterator(const iterator& _x) : node_ptr(_x.node_ptr) {}
+
+    reference operator*() const {
+        // in G++ version, this statement is 
+        return node_ptr->data;
+    }
+    
+    pointer   operator->() const {
+        return &(node_ptr->data);
+    }
+
+    _self& operator++() {
+        node_ptr = node_ptr->next;
+        return *this;
+    }
+
+    _self operator++(int) {
+        _self temp = *this;
+        node_ptr = node_ptr->next;
+        return temp;
+    }
+
+    _self& operator--() {
+        node_ptr = node_ptr->prev;
+        return *this;
+    }
+
+    _self operator--(int) {
+        _self temp = *this;
+        node_ptr = node_ptr->prev;
+        return temp;
+    }
+
+    bool operator==(const _self& _x) const {
+        return node_ptr == _x.node_ptr;
+    }
+
+    bool operator!=(const _self& _x) const {
+        return node_ptr != _x.node_ptr;
+    }
+
+};
+
 
 template<class T, class Allocator = allocator<__list_node<T> > >
 class list{
@@ -66,13 +129,13 @@ class list{
         typedef value_type&                         reference;
         typedef const value_type&                   const_reference;
         typedef __list_iterator<T>                  iterator;
-        typedef const __list_iterator<T>            const_iterator;
+        typedef __list_const_iterator<T>      const_iterator;
         typedef reverse_iterator_t<iterator>        reverse_iterator;
         typedef reverse_iterator_t<const_iterator>  const_reverse_iterator;
 
         typedef __list_node<T>                      list_node;
         typedef list_node*                          pointer;
-        typedef const list_node*                    const_pointer;
+        typedef __list_node<const T>                const_pointer;
 
         typedef simple_allocator<list_node, Allocator> data_allocator;
 
