@@ -4,7 +4,9 @@
 #include <cassert>
 #include <iostream>
 #include <type_traits>
+
 #include "stl_list.h"
+#include "stl_algorithm.imph.h"
 
 namespace ustl {
 
@@ -147,6 +149,32 @@ list<T, Allocator>::~list() {
     delete_node(head);
 }
 
+/************************************************/
+
+template<class T, class Allocator>
+typename list<T, Allocator>::_self&
+list<T, Allocator>::operator=(const _self& other)
+{
+    assign(other.cbegin(), other.cend());
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::assign(size_type count, const T& value)
+{
+    clear();
+    insert(head, (size_type)count, value);
+}
+
+template<class T, class Allocator>
+template<class InputIt>
+void
+list<T, Allocator>::assign(InputIt first, InputIt last)
+{
+    clear();
+    insert(head, first, last);
+}
+
 /********************************************/
 /*************  Element access **************/
 /********************************************/
@@ -243,7 +271,7 @@ typename list<T, Allocator>::iterator
 list<T, Allocator>::__erase(iterator first, iterator last)
 {
     while (first != last) {
-        __erase(first);
+        first = __erase(first);
     }
     return last;
 }
@@ -362,6 +390,68 @@ typename list<T, Allocator>::iterator
 list<T, Allocator>::insert(iterator pos, InputIt first, InputIt last)
 {
     return __insert(pos, first, last);
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::push_back(const T& value)
+{
+    insert(tail, value);
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::pop_back() 
+{
+    assert(head != tail);
+    iterator back_it(tail.node_ptr->prev);
+    erase(back_it);
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::push_front(const T& value)
+{
+    insert(head, value);
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::pop_front()
+{
+    assert(head != tail);
+    erase(head);
+}
+
+/*
+ * resizes the container to contain \count elements
+ * If the current size is less than \count
+ * 1) additional default-inserted elements are appended
+ * 2) additional copies of value are appended
+ */
+template<class T, class Allocator>
+void
+list<T, Allocator>::resize(size_type count)
+{
+    resize(count, T());
+}
+
+template<class T, class Allocator>
+void 
+list<T, Allocator>::resize(size_type count, const T& value)
+{
+    if (count <= node_amount-1)
+        return ;
+    insert(tail, (size_type)(count+1-node_amount), value);
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::swap(_self& other) 
+{
+    swap(head, other.head);
+    swap(tail, other.tail);
+    swap(node_amount, other.node_amount);
 }
 
 }

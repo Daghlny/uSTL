@@ -123,6 +123,7 @@ template<class T, class Allocator = allocator<__list_node<T> > >
 class list{
     public:
         /* type alias */
+        typedef list<T, Allocator>                  _self;
         typedef size_t                              size_type;
         typedef T                                   value_type;
         typedef std::ptrdiff_t                      difference_type; 
@@ -148,7 +149,7 @@ class list{
 
         ~list();
 
-        list<T>& operator=(const list& other);
+        _self& operator=(const _self& other);
         void assign(size_type count, const T& value);
         template<class InputIt>
         void assign(InputIt first, InputIt last);
@@ -189,7 +190,7 @@ class list{
         void pop_front();
         void resize(size_type count);
         void resize(size_type count, const value_type& value);
-        void swap(list<T>& other);
+        void swap(_self& other);
 
 
 

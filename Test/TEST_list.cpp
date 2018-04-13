@@ -52,9 +52,25 @@ int main(void)
         std::cout << *(pos++) << " ";
     std::cout << std::endl;
 
+    L2.erase(L2.begin(), L2.end());
+    L2.insert(L2.begin() ,3);
+    L2.insert(L2.begin(), 4);
+
     ustl::list<int>::const_iterator it = L2.cbegin();
     ++it;
-    std::cout << *it << std::endl;
+
+    L2.resize(10);
+
+    pos = L2.begin();
+    while (pos != L2.end()) 
+        std::cout << *(pos++) << " ";
+    std::cout << std::endl;
+
+    L2.assign(20, 2);
+    pos = L2.begin();
+    while (pos != L2.end()) 
+        std::cout << *(pos++) << " ";
+    std::cout << std::endl;
 
     return 0;
 }
