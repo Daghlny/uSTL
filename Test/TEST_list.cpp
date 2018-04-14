@@ -71,6 +71,12 @@ int main(void)
     while (pos != L2.end()) 
         std::cout << *(pos++) << " ";
     std::cout << std::endl;
+    L2.insert(pos, 2, 43);
+
+    ustl::list<int>::reverse_iterator rit = L2.rbegin();
+    while (rit != L2.rend()) {
+        std::cout << *(rit++) << std::endl;
+    }
 
     return 0;
 }

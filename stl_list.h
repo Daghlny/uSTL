@@ -6,7 +6,6 @@
 
 #include "stl_iterator.h"
 #include "stl_allocator.h"
-#include "stl_reverseiterator.h"
 #include "stl_simple_allocator.h"
 
 namespace ustl {

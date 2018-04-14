@@ -220,6 +220,18 @@ list<T, Allocator>::cend() const {
     return const_iterator(tail.node_ptr);
 }
 
+template<class T, class Allocator>
+typename list<T, Allocator>::reverse_iterator
+list<T, Allocator>::rbegin() {
+    return reverse_iterator(end());
+}
+
+template<class T, class Allocator>
+typename list<T, Allocator>::reverse_iterator
+list<T, Allocator>::rend() {
+    return reverse_iterator(begin());
+}
+
 /********************************************/
 /**************** Capacity ******************/
 /********************************************/
@@ -455,3 +467,4 @@ list<T, Allocator>::swap(_self& other)
 }
 
 }
+
