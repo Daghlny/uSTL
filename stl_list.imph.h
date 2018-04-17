@@ -77,7 +77,8 @@ typename list<T, Allocator>::pointer
 list<T, Allocator>::new_node(const T& value)
 {
     node_amount++;
-    return data_allocator::new_value(value);
+    pointer res = data_allocator::new_value(value);
+    return res;
 }
 
 template<class T, class Allocator>
@@ -98,6 +99,10 @@ template<class T, class Allocator>
 list<T, Allocator>::list(): node_amount(0)
 {
     tail.node_ptr = head.node_ptr = new_node();
+    /*
+    head.node_ptr->prev = head.node_ptr;
+    head.node_ptr->next = head.node_ptr;
+    */
 }
 
 template<class T, class Allocator>
@@ -105,6 +110,7 @@ list<T, Allocator>::list(size_type count,
                          const T& value):
                          node_amount(0)
 {
+    std::cout << "enter constructor(size_type, const T&)" << std::endl;
     tail.node_ptr = head.node_ptr = new_node();
 
     size_type cnt = 0;
@@ -128,7 +134,8 @@ template<class T, class Allocator>
 template<class InputIt>
 list<T, Allocator>::list(InputIt first, InputIt last): node_amount(0)
 {
-    head.node_ptr = tail.node_ptr = new_node();
+    head.node_ptr = new_node();
+    tail.node_ptr = head.node_ptr;
     insert(tail, first, last);
 }
 
@@ -143,8 +150,9 @@ list<T, Allocator>::list(const list<T>& other):node_amount(0)
 
 template<class T, class Allocator>
 list<T, Allocator>::~list() {
-    while (head != tail) {
-        delete_node(head++);
+    iterator it = begin();
+    while (it != tail) {
+        delete_node(it++);
     }
     delete_node(head);
 }
@@ -163,7 +171,7 @@ void
 list<T, Allocator>::assign(size_type count, const T& value)
 {
     clear();
-    insert(head, (size_type)count, value);
+    insert(begin(), (size_type)count, value);
 }
 
 template<class T, class Allocator>
@@ -172,7 +180,7 @@ void
 list<T, Allocator>::assign(InputIt first, InputIt last)
 {
     clear();
-    insert(head, first, last);
+    insert(begin(), first, last);
 }
 
 /********************************************/
@@ -182,7 +190,7 @@ template<class T, class Allocator>
 typename list<T, Allocator>::reference
 list<T, Allocator>::front(){
     assert(node_amount > 1);
-    return head.node_ptr->data;
+    return begin().node_ptr->data;
 }
 
 template<class T, class Allocator>
@@ -199,7 +207,7 @@ list<T, Allocator>::back(){
 template<class T, class Allocator>
 typename list<T, Allocator>::iterator
 list<T, Allocator>::begin() {
-    return head;
+    return iterator(tail.node_ptr->next);
 }
 
 template<class T, class Allocator>
@@ -211,7 +219,7 @@ list<T, Allocator>::end() {
 template<class T, class Allocator>
 typename list<T, Allocator>::const_iterator
 list<T, Allocator>::cbegin() const {
-    return const_iterator(head.node_ptr);
+    return const_iterator(tail.node_ptr->next);
 }
 
 template<class T, class Allocator>
@@ -268,7 +276,7 @@ typename list<T, Allocator>::iterator
 list<T, Allocator>::__erase(iterator pos)
 {
     assert(pos != tail);
-    if (pos == head) {
+    if (pos == begin()) {
         head++;
     }
     pointer curr = pos.node_ptr;
@@ -465,6 +473,49 @@ list<T, Allocator>::swap(_self& other)
     swap(tail, other.tail);
     swap(node_amount, other.node_amount);
 }
+
+/********************************************/
+/****************Operations******************/
+/********************************************/
+template<class T, class Allocator>
+void
+list<T, Allocator>::__transfer(const_iterator pos, const_iterator first, const_iterator last)
+{
+    /*
+    last.node_ptr->prev->next  = pos.node_ptr;
+    first.node_ptr->prev->next = last.node_ptr;
+    pos.node_ptr->prev->next   = first.node_ptr;
+
+    pointer tmp = pos.node_ptr->prev;
+
+    pos.node_ptr->prev = last.node_ptr->prev;
+    last.node_ptr->prev = first.node_ptr->prev;
+    first.node_ptr->prev = tmp;
+    */
+
+    if (pos == head) {
+        head.node_ptr = first.node_ptr;
+    }
+
+    /*
+    iterator it = head;
+    std::cout << "DEBUG: ";
+    while (it != tail)
+        std::cout << *(it++) << ",";
+    std::cout << std::endl;
+    */
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::splice(const_iterator pos, _self& other)
+{
+    if (!other.empty())
+        __transfer(pos, other.begin(), other.end());
+}
+
+
+
 
 }
 

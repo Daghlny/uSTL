@@ -7,7 +7,6 @@
 
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"
-#include "stl_reverseiterator.h"
 #include "stl_algorithm.imph.h"
 
 
@@ -359,7 +358,8 @@ template<class T, class Allocator>
 template<class InputIterator>
 typename vector<T, Allocator>::iterator
 vector<T, Allocator>::insert(iterator pos, InputIterator first, InputIterator last) {
-    return __insert_aux_template(pos, first, last, typename std::is_integral<InputIterator>::type());
+    return __insert_aux_template(pos, 
+           first, last, typename std::is_integral<InputIterator>::type());
 }
 
 template<class T, class Allocator>

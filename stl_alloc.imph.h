@@ -2,6 +2,10 @@
 
 
 #include <cstdlib>
+#include <iostream>
+
+using std::cout;
+using std::endl;
 
 namespace ustl {
 
@@ -13,7 +17,10 @@ namespace ustl {
 
     void *
     alloc::allocate(size_t n) {
-        return malloc(n);
+        void *res = NULL;
+        while (res == NULL)
+            res = malloc(n);
+        return res;
     }
 
     void 

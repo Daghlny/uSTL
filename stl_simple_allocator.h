@@ -13,6 +13,7 @@ public:
     static T* new_value(const T& value) {
         T* ptr = Allocator::allocate(1);
         Allocator::construct(ptr, value);
+        return ptr;
     }
 
     /* 

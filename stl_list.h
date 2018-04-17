@@ -64,12 +64,12 @@ struct __list_const_iterator : public iterator<bidirectional_iterator_tag, T> {
     typedef __list_const_iterator<T>  _self;
 
     typedef T value_type;
-    typedef const __list_node<T> node;
+    typedef __list_node<T> node;
     typedef __list_iterator<T> iterator;
     typedef const T* pointer;
     typedef const T& reference;
 
-    const __list_node<T> * node_ptr;
+    __list_node<T> * node_ptr;
 
     __list_const_iterator() : node_ptr() {}
     explicit __list_const_iterator(node* _x) : node_ptr(_x) {}
@@ -191,7 +191,25 @@ class list{
         void resize(size_type count, const value_type& value);
         void swap(_self& other);
 
+        /* Operations */
+        void merge(_self& other);
+        template<class Compare> void merge(_self& other);
 
+        void splice(const_iterator pos, _self& other);
+        void splice(const_iterator pos, _self& other, const_iterator it);
+        void splice(const_iterator pos, _self& other, const_iterator first, const_iterator last);
+
+        void remove(const T& value);
+        template<class UnaryPredicate>
+        void remove_if(UnaryPredicate p);
+
+        void reverse();
+
+        void unique();
+        template<class BinaryPredicate> void unique(BinaryPredicate p);
+
+        void sort();
+        template<class Compare> void sort(Compare comp);
 
     protected:
         iterator head;
@@ -218,6 +236,8 @@ class list{
         iterator __insert_template(iterator pos, InputIt first, InputIt last, std::false_type);
         template<class InputIt>
         iterator __insert_aux(iterator pos, InputIt first, InputIt last);
+
+        void __transfer(const_iterator pos, const_iterator first, const_iterator last);
 
 };
 
