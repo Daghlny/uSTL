@@ -212,14 +212,13 @@ class list{
         template<class Compare> void sort(Compare comp);
 
     protected:
-        iterator head;
-        iterator tail;
-        size_type node_amount;
+        pointer  _M_node;
 
     private:
         /* Memory */
         pointer new_node(const T& value = T());
         void delete_node(iterator pos);
+        void delete_node(pointer dnode);
 
         /* Modifiers */
         iterator __erase(iterator pos);

@@ -76,8 +76,9 @@ template<class T, class Allocator>
 typename list<T, Allocator>::pointer
 list<T, Allocator>::new_node(const T& value)
 {
-    node_amount++;
     pointer res = data_allocator::new_value(value);
+    res->next = res;
+    res->prev = res;
     return res;
 }
 
@@ -85,8 +86,20 @@ template<class T, class Allocator>
 void
 list<T, Allocator>::delete_node(iterator pos) 
 {
-    node_amount--;
     data_allocator::delete_value(pos.node_ptr);
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::delete_node(pointer dnode) 
+{
+    if (dnode->prev != NULL && dnode->next != NULL) {
+        dnode->prev->next = dnode->next;
+        dnode->next->prev = dnode->prev;
+        data_allocator::delete_value(dnode);
+    } else {
+        data_allocator::delete_value(dnode);
+    }
 }
 
 /*************************************************/
@@ -96,65 +109,55 @@ list<T, Allocator>::delete_node(iterator pos)
 /************ constructors ************/
 
 template<class T, class Allocator>
-list<T, Allocator>::list(): node_amount(0)
+list<T, Allocator>::list()
 {
-    tail.node_ptr = head.node_ptr = new_node();
-    /*
-    head.node_ptr->prev = head.node_ptr;
-    head.node_ptr->next = head.node_ptr;
-    */
+    _M_node = new_node();
 }
 
 template<class T, class Allocator>
 list<T, Allocator>::list(size_type count, 
-                         const T& value):
-                         node_amount(0)
+                         const T& value)
 {
-    std::cout << "enter constructor(size_type, const T&)" << std::endl;
-    tail.node_ptr = head.node_ptr = new_node();
+    _M_node = new_node();
 
     size_type cnt = 0;
-    pointer prev = NULL, curr = NULL;
+    pointer prev = _M_node, curr = NULL;
     for (; cnt < count; ++cnt) {
         curr = new_node(value);
         curr->prev = prev;
-        if (prev != NULL)
-            prev->next = curr;
-        else  {
-            head.node_ptr = curr;
-            curr->prev = tail.node_ptr;
-        }
+        prev->next = curr;
         prev = curr;
     }
-    curr->next = tail.node_ptr;
-    tail.node_ptr->prev = curr;
+    curr->next = _M_node;
+    _M_node->prev = curr;
 }
 
 template<class T, class Allocator>
 template<class InputIt>
-list<T, Allocator>::list(InputIt first, InputIt last): node_amount(0)
+list<T, Allocator>::list(InputIt first, InputIt last)
 {
-    head.node_ptr = new_node();
-    tail.node_ptr = head.node_ptr;
-    insert(tail, first, last);
+    _M_node = new_node();
+    insert(end(), first, last);
 }
 
 template<class T, class Allocator>
-list<T, Allocator>::list(const list<T>& other):node_amount(0)
+list<T, Allocator>::list(const list<T>& other)
 {
-    head.node_ptr = tail.node_ptr = new_node();
-    insert(head, other.cbegin(), other.cend());
+    _M_node = new_node();
+    insert(end(), other.cbegin(), other.cend());
 }
 
 /******************* destructor *****************/
 
 template<class T, class Allocator>
 list<T, Allocator>::~list() {
-    iterator it = begin();
-    while (it != tail) {
-        delete_node(it++);
+    pointer node = _M_node->next;
+    while (node != _M_node) {
+        pointer tmp = node->next;
+        delete_node(node);
+        node = tmp;
     }
-    delete_node(head);
+    delete_node(_M_node);
 }
 
 /************************************************/
@@ -189,15 +192,15 @@ list<T, Allocator>::assign(InputIt first, InputIt last)
 template<class T, class Allocator>
 typename list<T, Allocator>::reference
 list<T, Allocator>::front(){
-    assert(node_amount > 1);
-    return begin().node_ptr->data;
+    assert(_M_node->next != _M_node);
+    return _M_node->data;
 }
 
 template<class T, class Allocator>
 typename list<T, Allocator>::reference
 list<T, Allocator>::back(){
-    assert(node_amount > 1);
-    return tail.node_ptr->prev->data;
+    assert(_M_node->next != _M_node);
+    return _M_node->prev->data;
 }
 
 
@@ -207,25 +210,25 @@ list<T, Allocator>::back(){
 template<class T, class Allocator>
 typename list<T, Allocator>::iterator
 list<T, Allocator>::begin() {
-    return iterator(tail.node_ptr->next);
+    return iterator(_M_node->next);
 }
 
 template<class T, class Allocator>
 typename list<T, Allocator>::iterator
 list<T, Allocator>::end() {
-    return tail;
+    return iterator(_M_node);
 }
 
 template<class T, class Allocator>
 typename list<T, Allocator>::const_iterator
 list<T, Allocator>::cbegin() const {
-    return const_iterator(tail.node_ptr->next);
+    return const_iterator(_M_node->next);
 }
 
 template<class T, class Allocator>
 typename list<T, Allocator>::const_iterator
 list<T, Allocator>::cend() const {
-    return const_iterator(tail.node_ptr);
+    return const_iterator(_M_node);
 }
 
 template<class T, class Allocator>
@@ -248,13 +251,20 @@ template<class T, class Allocator>
 bool
 list<T, Allocator>::empty()
 {
-    return node_amount == 1;
+    return (_M_node->next == _M_node);
 }
+
+
+/*
+ * return the amount of elements in ustl::list
+ * due to the constant time complexity of splice(), this function needs
+ * O(n) complexity.
+ */
 
 template<class T, class Allocator>
 typename list<T, Allocator>::size_type
 list<T, Allocator>::size(){
-    return node_amount-1;
+    return distance(begin(), end());
 }
 
 template<class T, class Allocator>
@@ -275,13 +285,7 @@ template<class T, class Allocator>
 typename list<T, Allocator>::iterator
 list<T, Allocator>::__erase(iterator pos)
 {
-    assert(pos != tail);
-    if (pos == begin()) {
-        head++;
-    }
-    pointer curr = pos.node_ptr;
-    curr->prev->next = curr->next;
-    curr->next->prev = curr->prev;
+    assert(pos.node_ptr != _M_node);
     delete_node(pos++);
     return pos;
 }
@@ -301,24 +305,12 @@ typename list<T, Allocator>::iterator
 list<T, Allocator>::__insert(iterator pos, const T& value) 
 {
     pointer insert_node = new_node(value);
-    pointer curr_node = pos.node_ptr;
+    pointer next = pos.node_ptr, prev = pos.node_ptr->prev;
 
-    if ( node_amount == 2 && pos == head ) {
-        curr_node->prev = insert_node;
-        insert_node->prev = curr_node;
-        curr_node->next = insert_node;
-        insert_node->next = curr_node;
-        head--;
-        return iterator(insert_node);
-    }
-
-    curr_node->prev->next = insert_node;
-    insert_node->prev = curr_node->prev;
-    curr_node->prev = insert_node;
-    insert_node->next = curr_node;
-
-    if (pos == head)
-        head--;
+    insert_node->next = next;
+    insert_node->prev = prev;
+    next->prev = insert_node;
+    prev->next = insert_node;
 
     return iterator(insert_node);
 }
@@ -373,7 +365,7 @@ list<T, Allocator>::__insert(iterator pos, InputIt first, InputIt last)
 template<class T, class Allocator>
 void
 list<T, Allocator>::clear(){
-    __erase(head, tail);
+    __erase(begin(), end());
 }
 
 template<class T, class Allocator>
@@ -416,15 +408,15 @@ template<class T, class Allocator>
 void
 list<T, Allocator>::push_back(const T& value)
 {
-    insert(tail, value);
+    insert(end(), value);
 }
 
 template<class T, class Allocator>
 void
 list<T, Allocator>::pop_back() 
 {
-    assert(head != tail);
-    iterator back_it(tail.node_ptr->prev);
+    assert(_M_node->next != _M_node);
+    iterator back_it(_M_node->prev);
     erase(back_it);
 }
 
@@ -432,15 +424,15 @@ template<class T, class Allocator>
 void
 list<T, Allocator>::push_front(const T& value)
 {
-    insert(head, value);
+    insert(begin(), value);
 }
 
 template<class T, class Allocator>
 void
 list<T, Allocator>::pop_front()
 {
-    assert(head != tail);
-    erase(head);
+    assert(_M_node != _M_node->next);
+    erase(begin());
 }
 
 /*
@@ -460,18 +452,17 @@ template<class T, class Allocator>
 void 
 list<T, Allocator>::resize(size_type count, const T& value)
 {
-    if (count <= node_amount-1)
+    size_type node_amount = size();
+    if (count <= node_amount)
         return ;
-    insert(tail, (size_type)(count+1-node_amount), value);
+    insert(end(), (size_type)(count+1-node_amount), value);
 }
 
 template<class T, class Allocator>
 void
 list<T, Allocator>::swap(_self& other) 
 {
-    swap(head, other.head);
-    swap(tail, other.tail);
-    swap(node_amount, other.node_amount);
+    ustl::swap(_M_node, other._M_node);
 }
 
 /********************************************/
@@ -481,7 +472,6 @@ template<class T, class Allocator>
 void
 list<T, Allocator>::__transfer(const_iterator pos, const_iterator first, const_iterator last)
 {
-    /*
     last.node_ptr->prev->next  = pos.node_ptr;
     first.node_ptr->prev->next = last.node_ptr;
     pos.node_ptr->prev->next   = first.node_ptr;
@@ -491,19 +481,6 @@ list<T, Allocator>::__transfer(const_iterator pos, const_iterator first, const_i
     pos.node_ptr->prev = last.node_ptr->prev;
     last.node_ptr->prev = first.node_ptr->prev;
     first.node_ptr->prev = tmp;
-    */
-
-    if (pos == head) {
-        head.node_ptr = first.node_ptr;
-    }
-
-    /*
-    iterator it = head;
-    std::cout << "DEBUG: ";
-    while (it != tail)
-        std::cout << *(it++) << ",";
-    std::cout << std::endl;
-    */
 }
 
 template<class T, class Allocator>
@@ -512,6 +489,21 @@ list<T, Allocator>::splice(const_iterator pos, _self& other)
 {
     if (!other.empty())
         __transfer(pos, other.begin(), other.end());
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::splice(const_iterator pos, _self& other, const_iterator it) 
+{
+    if (!other.empty())
+        __transfer(pos, it, other.end());
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::splice(const_iterator pos, _self& other, const_iterator first, const_iterator last) {
+    if (!other.empty())
+        __transfer(pos, first, last);
 }
 
 

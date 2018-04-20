@@ -12,9 +12,7 @@ int main(void)
     ustl::list<int> L1(nums.begin(), nums.end());
     ustl::list<int> L2(3, 43);
 
-    L1.splice(L1.begin(), L2);
 
-    /*
     cout << "L1 node addr: ";
     auto it1 = L1.begin();
     while (it1 != L1.end()) {
@@ -31,6 +29,7 @@ int main(void)
     }
     cout << endl;
 
+    L1.splice(L1.begin(), L2, L2.begin(), L2.end());
 
     cout << "After splice: ";
     auto pos = L1.begin();
@@ -41,7 +40,6 @@ int main(void)
     cout << endl;
 
 
-*/
     cout << "Finish All OUTPUT" << endl;
     //exit(0);
 
