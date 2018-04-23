@@ -76,6 +76,8 @@ struct __list_const_iterator : public iterator<bidirectional_iterator_tag, T> {
     //explicit __list_const_iterator(__list_node<T>* const _x) : node_ptr(_x) {}
     __list_const_iterator(const iterator& _x) : node_ptr(_x.node_ptr) {}
 
+    iterator _M_const_cast(){ return iterator(node_ptr); }
+
     reference operator*() const {
         // in G++ version, this statement is 
         return node_ptr->data;
@@ -193,15 +195,14 @@ class list{
 
         /* Operations */
         void merge(_self& other);
-        template<class Compare> void merge(_self& other);
+        template<class Compare> void merge(_self& other, Compare cmp);
 
         void splice(const_iterator pos, _self& other);
         void splice(const_iterator pos, _self& other, const_iterator it);
         void splice(const_iterator pos, _self& other, const_iterator first, const_iterator last);
 
         void remove(const T& value);
-        template<class UnaryPredicate>
-        void remove_if(UnaryPredicate p);
+        template<class UnaryPredicate> void remove_if(UnaryPredicate p);
 
         void reverse();
 

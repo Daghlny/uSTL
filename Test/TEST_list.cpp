@@ -8,40 +8,20 @@ using std::endl;
 
 int main(void)
 {
-    std::vector<int> nums{1,2,3,4,5,6};
-    ustl::list<int> L1(nums.begin(), nums.end());
-    ustl::list<int> L2(3, 43);
+    std::vector<int> nums1{3,2,1,5,7,6,10};
+    ustl::list<int> L1(nums1.begin(), nums1.end());
 
-
-    cout << "L1 node addr: ";
-    auto it1 = L1.begin();
-    while (it1 != L1.end()) {
-        cout << (it1.node_ptr) << " ";
-        it1++;
-    }
+    auto it = L1.begin();
+    while (it != L1.end())
+        cout << *(it++) << " ";
     cout << endl;
 
-    cout << "L2 node addr: ";
-    auto it2 = L2.begin();
-    while (it2 != L2.end()) {
-        cout << (it2.node_ptr) << " ";
-        it2++;
-    }
+    L1.sort();
+
+    it = L1.begin();
+    while (it != L1.end())
+        cout << *(it++) << " ";
     cout << endl;
-
-    L1.splice(L1.begin(), L2, L2.begin(), L2.end());
-
-    cout << "After splice: ";
-    auto pos = L1.begin();
-    while (pos != L1.end()) {
-        cout << (pos.node_ptr) << " ";
-        pos++;
-    }
-    cout << endl;
-
-
-    cout << "Finish All OUTPUT" << endl;
-    //exit(0);
 
     return 0;
 }

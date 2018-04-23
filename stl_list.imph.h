@@ -8,6 +8,9 @@
 #include "stl_list.h"
 #include "stl_algorithm.imph.h"
 
+using std::cout;
+using std::endl;
+
 namespace ustl {
 
 template<class T>
@@ -484,6 +487,39 @@ list<T, Allocator>::__transfer(const_iterator pos, const_iterator first, const_i
 }
 
 template<class T, class Allocator>
+template<class Compare>
+void
+list<T, Allocator>::merge(_self& other, Compare cmp)
+{
+    if (this != &other)
+    {
+        iterator _first1 = begin();
+        iterator _first2 = other.begin();
+        iterator _last1 = end();
+        iterator _last2 = other.end();
+
+        while (_first1 != _last1 && _first2 != _last2) {
+            if (cmp(*_first2, *_first1)) {
+                iterator _next = _first2;
+                __transfer(_first1, _first2, ++_next);
+                _first2 = _next;
+            } else 
+                ++_first1;
+        }
+
+        if (_first2 != _last2)
+            __transfer(_last1, _first2, _last2);
+    }
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::merge(_self& other)
+{
+    merge(other, ustl::less<T>());
+}
+
+template<class T, class Allocator>
 void
 list<T, Allocator>::splice(const_iterator pos, _self& other)
 {
@@ -495,8 +531,12 @@ template<class T, class Allocator>
 void
 list<T, Allocator>::splice(const_iterator pos, _self& other, const_iterator it) 
 {
-    if (!other.empty())
-        __transfer(pos, it, other.end());
+    iterator __j = it._M_const_cast();
+    ++__j;
+    if (pos == it  || pos == __j) 
+        return ;
+
+    __transfer(pos, it, __j);
 }
 
 template<class T, class Allocator>
@@ -506,6 +546,130 @@ list<T, Allocator>::splice(const_iterator pos, _self& other, const_iterator firs
         __transfer(pos, first, last);
 }
 
+template<class T, class Allocator>
+void
+list<T, Allocator>::remove(const T& value)
+{
+    pointer node = _M_node->next;
+    while (node != _M_node) {
+        pointer tmp = node->next;
+        if (node->data == value)
+            delete_node(node);
+        node = tmp;
+    }
+}
+
+template<class T, class Allocator>
+template<class UnaryPredicate>
+void
+list<T, Allocator>::remove_if(UnaryPredicate p)
+{
+    pointer node = _M_node->next;
+    while (node != _M_node) {
+        pointer tmp = node->next;
+        if( p(node->data) )
+            delete_node(node);
+        node = tmp;
+    }
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::reverse()
+{
+    pointer node = _M_node->next;
+    while (node != _M_node) {
+        ustl::swap(node->next, node->prev);
+        node = node->prev;
+    }
+    ustl::swap(_M_node->next, _M_node->prev);
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::unique()
+{
+    pointer prev = _M_node->next, node = _M_node->next->next;
+    if (prev == _M_node || node == _M_node)
+        return;
+    while ( node != _M_node ) {
+        pointer tmp = node->next;
+        if (node->data == prev->data) {
+            delete_node(node);
+        } else {
+            prev = node;
+        }
+        node = tmp;
+    }
+}
+
+template<class T, class Allocator>
+template<class BinaryPredicate>
+void
+list<T, Allocator>::unique(BinaryPredicate p) 
+{
+    pointer prev = _M_node->next, node = _M_node->next->next;
+    if (prev == _M_node || node == _M_node)
+        return;
+    while ( node != _M_node ) {
+        pointer tmp = node->next;
+        if (p(node->data, prev->data)) {
+            delete_node(node);
+        } else {
+            prev = node;
+        }
+        node = tmp;
+    }
+}
+
+/* 
+ * The implementation is accepted by GNU STL
+ * The simple idea is using non-recursive merge-sort
+ */
+template<class T, class Allocator>
+template<class Compare>
+void
+list<T, Allocator>::sort(Compare cmp)
+{
+    if (this->_M_node->next != this->_M_node && 
+        this->_M_node->next->next != this->_M_node)
+    {
+        // do nothing if there is only 0 or 1 length
+        _self   __carry;
+        _self   __tmp[64];
+        _self*  __fill = &__tmp[0];
+        _self*  __counter;
+
+        do {
+            __carry.splice(__carry.begin(), *this, begin());
+
+            for (__counter = &__tmp[0]; 
+                 __counter != __fill && !__counter->empty();
+                 ++__counter)
+            {
+                __counter->merge(__carry, cmp);
+                __carry.swap(*__counter);
+            }
+            __carry.swap(*__counter);
+
+            if (__counter == __fill)
+                ++__fill;
+        }while( !empty() );
+
+        for (__counter = &__tmp[1]; __counter != __fill; ++__counter) {
+            __counter->merge(*(__counter - 1), cmp);
+        }
+
+        this->swap(* (__fill-1) );
+    }
+}
+
+template<class T, class Allocator>
+void
+list<T, Allocator>::sort()
+{
+    this->sort(ustl::less<T>());
+}
 
 
 

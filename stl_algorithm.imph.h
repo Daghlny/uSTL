@@ -5,6 +5,22 @@
 
 namespace ustl {
 
+template<class T>
+class less {
+    public:
+        bool operator()(const T& lhs, const T& rhs) {
+            return lhs < rhs;
+        }
+};
+
+template<class T>
+class greater {
+    public:
+        bool operator()(const T& lhs, const T& rhs) {
+            return lhs > rhs;
+        }
+};
+
 /*
  * exchanges the given values
  */
