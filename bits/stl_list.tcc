@@ -6,7 +6,7 @@
 #include <type_traits>
 
 #include "stl_list.h"
-#include "stl_algorithm.imph.h"
+#include "stl_algorithm.tcc"
 
 using std::cout;
 using std::endl;

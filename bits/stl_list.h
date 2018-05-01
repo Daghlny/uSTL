@@ -243,6 +243,6 @@ class list{
 
 }
 
-#include "stl_list.imph.h"
+#include "stl_list.tcc"
 
 

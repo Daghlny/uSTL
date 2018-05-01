@@ -7,7 +7,7 @@
 
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"
-#include "stl_algorithm.imph.h"
+#include "stl_algorithm.tcc"
 
 
 namespace ustl {

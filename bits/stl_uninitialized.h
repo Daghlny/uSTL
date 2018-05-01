@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#include "stl_algorithm.imph.h"
+#include "stl_algorithm.tcc"
 #include "stl_allocator.h"
 #include "stl_type_traits.h"
 
