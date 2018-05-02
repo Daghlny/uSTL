@@ -11,7 +11,12 @@
 
 namespace ustl {
 
+template<class T, class Allocator>
+void
+__deque_base<T, Allocator>::_M_initialize_M_map(size_t num_elements) 
+{
 
+}
 
 }
 
