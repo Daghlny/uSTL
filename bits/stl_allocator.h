@@ -26,7 +26,7 @@ class allocator{
         };
 
     public:
-        static T* allocate(size_type n, const void* = 0);
+        static T* allocate(size_type n, const void* _ptr= 0);
         static T* allocate();
 
         static void deallocate(T* ptr, size_t n);

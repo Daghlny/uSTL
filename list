@@ -1,0 +1,19 @@
+
+/*
+ * @file include/list
+ * This is a uSTL header
+ */
+
+#ifndef _USTL_LIST
+#define _USTL_LIST
+
+#include "bits/algorithm.tcc"
+#include "bits/stl_iterator.h"
+#include "bits/stl_allocator.h"
+#include "bits/stl_simple_allocator.h"
+#include "bits/stl_list.h"
+#include "bits/list.tcc"
+
+
+#endif
+

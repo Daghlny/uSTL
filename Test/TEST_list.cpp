@@ -1,5 +1,6 @@
 
-#include "../stl_list.h"
+#include "stl_list.h"
+#include "stl_list.tcc"
 #include <iostream>
 #include <vector>
 

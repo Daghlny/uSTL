@@ -14,6 +14,10 @@ namespace ustl{
 #define __USTL_DEQUE_BUF_SIZE 512
 #endif
 
+#ifndef __USTL_DEQUE_INIT_MAP_SIZE 
+#define __USTL_DEQUE_INIT_MAP_SIZE 8
+#endif
+
 inline size_t __deque_buf_size(size_t __size) 
 {
     return (__size < __USTL_DEQUE_BUF_SIZE ? size_t (__USTL_DEQUE_BUF_SIZE / __size) : size_t(1)); 
@@ -151,29 +155,48 @@ class __deque_iterator {
 };
 
 
-template<class T, class Allocator = ustl::allocator<T*> >
+template<class T, class Allocator = ustl::allocator<T> >
 class __deque_base {
     public:
-        typedef simple_allocator<T*, Allocator>  data_allocator;
+        typedef simple_allocator< T*, ustl::allocator<T*> >  map_allocator;
+        typedef simple_allocator< T, Allocator>              elt_allocator;
+
         typedef T**                              map_pointer;
+
+        typedef __deque_iterator<T>              iterator;
 
         /* constructors */
         __deque_base(): M_map(NULL), len(0) {}
-        explicit __deque_base(size_t __len) {
+        explicit __deque_base(size_t __len) 
+        {
             M_map = data_allocator::allocate(__len);
             ustl::fill(M_map, M_map+__len, NULL);
             len   = __len;
         }
 
+        /* destructor */
+        ~__deque_base() 
+        {
+            if ( M_map != NULL ) 
+            {
+                _M_destroy_nodes(M_start._m_node, M_finish._m_node + 1);
+                map_allocator::
+            }
+        }
+
         size_t size() { return _len; }
 
         void _M_initialize_M_map(size_t num_elements); 
+        void _M_create_nodes(map_pointer nstart, map_pointer nfinish);
+        void _M_destroy_nodes(map_pointer nstart, map_pointer nfinish);
 
         
 
-    private:
+    protected:
         T**    M_map;
-        size_t len;
+        size_t M_map_size;
+        iterator M_start;       // the first element's iterator 
+        iterator M_finish;      // the last element's iterator
 };
 
 template<class T, class Allocator>
