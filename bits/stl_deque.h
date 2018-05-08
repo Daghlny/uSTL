@@ -7,6 +7,7 @@
 #include "stl_iterator.h"
 #include "stl_allocator.h"
 #include "stl_simple_allocator.h"
+#include "algorithm.tcc"
 
 namespace ustl{
 
@@ -50,7 +51,7 @@ class __deque_iterator {
         __deque_iterator() : _m_cur(), _m_first(), _m_last(), _m_node() {}
         __deque_iterator(elt_pointer x, map_pointer y) : 
             _m_cur(x), _m_first(y), _m_last(*y + __deque_buf_size(sizeof(T))), _m_node(y) {} 
-        __deque_iterator(_Self x) : 
+        __deque_iterator(const _Self &x) : 
             _m_cur(x._m_cur), _m_first(x._m_first), _m_last(x._m_last), _m_node(x._m_node) {}
 
         iterator _const_cast() const { return iterator(_m_cur, _m_node); }
@@ -156,54 +157,94 @@ class __deque_iterator {
 
 
 template<class T, class Allocator = ustl::allocator<T> >
-class __deque_base {
+class deque {
     public:
-        typedef simple_allocator< T*, ustl::allocator<T*> >  map_allocator;
-        typedef simple_allocator< T, Allocator>              elt_allocator;
+        typedef allocator<T*>  map_allocator;
+        typedef allocator<T>   elt_allocator;
+
+        typedef deque<T, Allocator>              _Self;
 
         typedef T**                              map_pointer;
+        typedef T*                               pointer;
+        typedef T&                               reference;
+        typedef T                                value_type;
+        typedef std::ptrdiff_t                   difference_type;
 
         typedef __deque_iterator<T>              iterator;
+        typedef size_t                           size_type;
 
         /* constructors */
-        __deque_base(): M_map(NULL), len(0) {}
-        explicit __deque_base(size_t __len) 
-        {
-            M_map = data_allocator::allocate(__len);
-            ustl::fill(M_map, M_map+__len, NULL);
-            len   = __len;
-        }
+        deque();
+        explicit deque(size_t _elements_num) ;
+        template<class InputIt> deque(InputIt first, InputIt last);
+        deque(size_type count, const T& value);
 
         /* destructor */
-        ~__deque_base() 
-        {
-            if ( M_map != NULL ) 
-            {
-                _M_destroy_nodes(M_start._m_node, M_finish._m_node + 1);
-                map_allocator::
-            }
-        }
+        ~deque();
 
-        size_t size() { return _len; }
-
+        /* Memory conductions */
         void _M_initialize_M_map(size_t num_elements); 
+        void _M_deallocate_M_map();
         void _M_create_nodes(map_pointer nstart, map_pointer nfinish);
         void _M_destroy_nodes(map_pointer nstart, map_pointer nfinish);
 
-        
+        void _M_insert_begin_nodes(size_t elements_num);
+
+        /* element access */
+        reference at(size_type index);
+        reference operator[](size_type index);
+        reference front();
+        reference back();
+
+        /* Capacity */
+        size_t size() { return M_map_size; }
+
+        /* modifiers */
+        void clear();
+        iterator insert(iterator pos, const T& value);
+        void insert(iterator pos, size_type count, const T& value);
+        template<class InputIt> void insert(iterator pos, InputIt first, InputIt last);
+        iterator erase(iterator pos);
+        iterator erase(iterator first, iterator last);
+
+        void push_back(const T& value);
+        void pop_back();
+        void push_front(const T& value);
+        void pop_front();
+
+        void resize(size_type count);
+        void resize(size_type count, const T& value);
+        void swap(_Self& other);
 
     protected:
         T**    M_map;
         size_t M_map_size;
         iterator M_start;       // the first element's iterator 
         iterator M_finish;      // the last element's iterator
+
+    private:
+        /* Memory */
+        static size_t _S_buffer_size() { return __deque_buf_size(sizeof(T)); }
+        void _M_reallocate_map(size_type __nodes_to_add, bool __add_at_front);
+        // both functions are in g++ stl_deque.h
+        iterator _M_reserve_elements_at_front(size_type _n);
+        iterator _M_reserve_elements_at_back (size_type _n);
+        void _M_reserve_map_at_front(size_type __nodes_to_add = 1);
+        void _M_reserve_map_at_back (size_type __nodes_to_add = 1);
+        // both functions are in g++ deque.tcc
+        void _M_new_elements_at_front(size_type __new_elems);
+        void _M_new_elements_at_back (size_type __new_elems);
+
+
+        /* inner insert */
+        iterator __insert(iterator pos, const T& _x);
+
+        /* inner capacity check */
+        bool __touch_start(size_type _insert_n);
+        bool __touch_finish(size_type _insert_n);
+
 };
 
-template<class T, class Allocator>
-class deque{
-    public:
-        typedef __deque_iterator<T> iterator; 
-};
 
 }
 

@@ -31,6 +31,24 @@ void swap(T& a, T& b){
     b = temp;
 }
 
+template<class T>
+T max(const T& lhs, const T& rhs)
+{
+    if (lhs < rhs)
+        return rhs;
+    else
+        return lhs;
+}
+
+template<class T>
+T min(const T& lhs, const T& rhs)
+{
+    if (lhs < rhs)
+        return lhs;
+    else
+        return rhs;
+}
+
 /**********************************************/
 /************** Copy Functions ****************/
 /**********************************************/
@@ -63,6 +81,7 @@ BidirIt2 copy_backward(BidirIt1 first, BidirIt1 last, BidirIt2 d_last) {
     }
     return d_ret;
 }
+
 
 /**********************************************/
 /************** Fill Functions ****************/
