@@ -100,6 +100,27 @@ OutputIt fill_n(OutputIt first, Size count, const T& value) {
     return first;
 }
 
+/**********************************************/
+/************** Move Functions ****************/
+/**********************************************/
+
+template<class B1, typename B2>
+inline B2
+move(B1 _first, B1 _last, B2 _result)
+{
+    while (_first != _last)
+        *(_result++) = *(_first++);
+    return _result;
+}
+
+template<class B1, typename B2>
+inline B2
+move_backward(B1 _first, B1 _last, B2 _result) 
+{
+    while (_first != _last) 
+        *(--_result) = *(--_last);
+    return _result;
+}
 
 }
 

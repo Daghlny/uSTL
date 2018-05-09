@@ -8,6 +8,9 @@
 #include "stl_iterator.h"
 #include "stl_allocator.h"
 #include "stl_simple_allocator.h"
+#include "stl_uninitialized.h"
+
+#include "algorithm.tcc"
 
 namespace ustl {
 
@@ -129,30 +132,139 @@ deque<T, Allocator>::_M_destroy_nodes(map_pointer nstart, map_pointer nfinish)
 
 /******** inner insert **********/
 
+// can't call _M_insert_aux(iterator, size_type, value_type) direcly, because this function will return a iterator
+// and _M_insert_aux may invalidate iterators
+// this function is in deque.tcc:622
 template<class T, class Allocator>
 typename deque<T, Allocator>::iterator
 deque<T, Allocator>::__insert(iterator pos, const T& _x)
 {
-    size_type dis_to_start = distance(M_start, pos);
-    size_type dis_to_finish = distance(pos, M_finish);
 
-    if (dis_to_start < dis_to_finish) {
-        // we should move [M_start, pos] forward
-        __move_begin_forward(pos, 1);
-        *pos = _x;
+}
+
+template<class T, class Allocator>
+template<class InputIt>
+void
+deque<T, Allocator>::_M_range_insert_aux(iterator pos, InputIt _first, InputIt _last) 
+{
+    const size_type _n = ustl::distance(_first, _last);
+    if (pos._m_cur == M_start._m_cur) {
+        iterator new_start = _M_reserve_elements_at_front(_n);
+        uninitialized_copy_forward(_first, _last, new_start);
+        M_start = new_start;
+    } else if (pos._m_cur == M_finish._m_cur) {
+        iterator new_finish = _M_reserve_elements_at_back(_n);
+        uninitialized_copy_forward(_first, _last, M_finish);
+        M_finish = new_finish;
+    } else 
+        _M_insert_aux(pos, _first, _last, _n);
+}
+
+template<class T, class Allocator>
+template<class InputIt>
+void
+deque<T, Allocator>::_M_insert_aux(iterator _pos, InputIt _first, InputIt _last, size_type _n) 
+{
+    const difference_type elems_before = _pos - M_start;
+    const size_type       length      = size();
+    if (size_type(elems_before) < length/2 ) {
+        // move the front part
+        iterator new_start = _M_reserve_elements_at_front(_n);
+        iterator old_start = M_start;
+        
+        if (elems_before >= difference_type(_n))
+        {
+            iterator start_n = M_start + difference_type(_n);
+            ustl::uninitialized_copy_forward(old_start, start_n, new_start);
+            M_start = new_start;
+            ustl::move(start_n, _pos, old_start);
+            ustl::copy(_first, _last, _pos - difference_type(_n));
+        } else {
+            InputIt mid = _first;
+            ustl::advance(mid, difference_type(_n) - elems_before);
+            // G++ combines these two invocation to a __uninitialized_move_copy
+            ustl::uninitialized_copy_forward(old_start, _pos, new_start);
+            ustl::uninitialized_copy_forward(_first, mid, new_start + difference_type(elems_before));
+            M_start = new_start;
+            ustl::copy(mid, _last, old_start);
+        }
     } else {
-        // we should move [pos, M_finish) backward
-        __move_end_backward(pos, 1);
-        *pos = _x;
+        // move the back part
+        iterator new_finish = _M_reserve_elements_at_back(_n);
+        iterator old_finish = M_finish;
+        const difference_type elems_after = length - elems_before;
+
+        // Attention: here is > , and above is >=
+        if (elems_after > difference_type(_n)) 
+        {
+            iterator finish_n = _pos + difference_type(_n);
+            ustl::uninitialized_copy_forward(finish_n, old_finish, old_finish);
+            ustl::move(_pos, finish_n, finish_n);
+            M_finish = new_finish;
+            ustl::copy(_first, _last, _pos);
+        } else {
+            InputIt mid = _first;
+            ustl::advance(mid, elems_after);
+            ustl::uninitialized_copy_backward(_pos, old_finish, new_finish);
+            ustl::uninitialized_copy_forward(mid, _last, old_finish);
+            M_finish = new_finish;
+            ustl::copy(_first, mid, _pos);
+        }
     }
 }
 
+template<class T, class Allocator>
+void
+deque<T, Allocator>::_M_insert_aux(iterator pos, size_type _n, const value_type& _x)
+{
+    const difference_type elems_before = pos - M_start;
+    const size_type length = this->size();
+    value_type x_copy = _x;
+
+    if (elems_before < difference_type(length/2)) {
+        // insert elements at front
+        iterator new_start = _M_reserve_elements_at_front(_n);
+        iterator old_start = M_start;
+        if (elems_before >= difference_type(_n)) {
+            /*    new_start --- old_start --- __start_n ------ pos */
+            iterator __start_n = M_start + difference_type(_n);
+            ustl::uninitialized_copy_forward(old_start, __start_n, new_start);
+            M_start = new_start;
+            ustl::move(__start_n, pos, old_start);
+            ustl::fill(pos - difference_type(_n), pos, x_copy);
+        } else {
+            const size_type vacancies = _n - elems_before;
+            iterator vacancies_it = ustl::uninitialized_copy_forward(old_start, pos, new_start);
+            M_start = new_start;
+            ustl::uninitialized_fill_n(vacancies_it, vacancies, x_copy);
+            ustl::fill(old_start, pos, x_copy);
+        }
+    } else {
+        // insert elements at back
+        iterator new_finish = _M_reserve_elements_at_back(_n);
+        iterator old_finish = M_finish;
+        const difference_type elems_after = length - elems_before;
+        if (elems_after > difference_type(_n)) {
+            iterator __finish_n = M_finish - difference_type(_n);
+            ustl::uninitialized_copy_forward(__finish_n, old_finish, old_finish);
+            M_finish = new_finish;
+            ustl::move_backward(pos, __finish_n, old_finish);
+            ustl::fill(pos, pos+difference_type(_n), x_copy);
+        } else {
+            const difference_type vacancies = _n - elems_after;
+            ustl::uninitialized_copy_forward(pos, old_finish, old_finish + vacancies);
+            ustl::uninitialized_fill_n(old_finish, vacancies, x_copy);
+            ustl::fill(pos, old_finish, x_copy);
+            M_finish = new_finish;
+        }
+    }
+}
 /*************************************************
  * *************** private functions *************
  * ***********************************************/
 
 /*
- * reallocates M_map to add __nodes_to_add, the reallocation may not be occured if there is enough memory of M_map
+ * reallocates M_map to add __nodes_to_add nodes, the reallocation may not be occured if there is enough memory of M_map
  * __add_at_front indicates that whether adding elements at the front
  */
 template<class T, class Allocator>
@@ -185,7 +297,15 @@ deque<T, Allocator>::_M_reallocate_map(size_type __nodes_to_add, bool __add_at_f
 }
 
 /*
- * reserve 
+ * reserve the space at front or back of M_map
+ * @_M_reserve_elements_at_front: return the iterator pointing to the first position forwards _n 
+ * @_M_reserve_elements_at_back : return the iterator pointing to the last position backwards _n
+ *
+ * The calling path:
+ * _M_reserve_elements_at_front -> _M_new_elements_at_front -> _M_reserve_map_at_front -> _M_reallocate_map
+ * _M_reserve_elements_at_back  -> _M_new_elements_at_back  -> _M_reserve_map_at_back  -> _M_reallocate_map
+ *
+ * these methods will only allocate the space to store, won't construct the objects
  */
 template<class T, class Allocator>
 typename deque<T, Allocator>::iterator

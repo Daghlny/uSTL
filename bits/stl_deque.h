@@ -167,11 +167,11 @@ class deque {
         typedef T**                              map_pointer;
         typedef T*                               pointer;
         typedef T&                               reference;
+        typedef size_t                           size_type;
         typedef T                                value_type;
         typedef std::ptrdiff_t                   difference_type;
 
         typedef __deque_iterator<T>              iterator;
-        typedef size_t                           size_type;
 
         /* constructors */
         deque();
@@ -183,10 +183,6 @@ class deque {
         ~deque();
 
         /* Memory conductions */
-        void _M_initialize_M_map(size_t num_elements); 
-        void _M_deallocate_M_map();
-        void _M_create_nodes(map_pointer nstart, map_pointer nfinish);
-        void _M_destroy_nodes(map_pointer nstart, map_pointer nfinish);
 
         void _M_insert_begin_nodes(size_t elements_num);
 
@@ -226,18 +222,27 @@ class deque {
         /* Memory */
         static size_t _S_buffer_size() { return __deque_buf_size(sizeof(T)); }
         void _M_reallocate_map(size_type __nodes_to_add, bool __add_at_front);
-        // both functions are in g++ stl_deque.h
+        // these four functions are definited in g++ stl_deque.h
         iterator _M_reserve_elements_at_front(size_type _n);
         iterator _M_reserve_elements_at_back (size_type _n);
         void _M_reserve_map_at_front(size_type __nodes_to_add = 1);
         void _M_reserve_map_at_back (size_type __nodes_to_add = 1);
-        // both functions are in g++ deque.tcc
+        // both functions are definited in g++ deque.tcc
         void _M_new_elements_at_front(size_type __new_elems);
         void _M_new_elements_at_back (size_type __new_elems);
+
+        void _M_initialize_M_map(size_t num_elements); 
+        void _M_deallocate_M_map();
+
+        void _M_create_nodes (map_pointer nstart, map_pointer nfinish);
+        void _M_destroy_nodes(map_pointer nstart, map_pointer nfinish);
 
 
         /* inner insert */
         iterator __insert(iterator pos, const T& _x);
+        void _M_insert_aux(iterator pos, size_type _n, const value_type& _x);
+        template<class InputIt> void _M_insert_aux(iterator _pos, InputIt _first, InputIt _last, size_type _n);
+        template<class InputIt> void _M_range_insert_aux(iterator pos, InputIt _first, InputIt _last);
 
         /* inner capacity check */
         bool __touch_start(size_type _insert_n);
