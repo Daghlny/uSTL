@@ -69,7 +69,7 @@ inline ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n, const
 template<class InputIterator, class ForwardIterator>
 inline ForwardIterator __uninitialized_copy_aux_forward(InputIterator first, InputIterator last, ForwardIterator result, __true_type) 
 {
-    return copy(first, last, result);
+    return ustl::copy(first, last, result);
 }
 
 template<class InputIterator, class ForwardIterator>
@@ -91,7 +91,7 @@ inline ForwardIterator __uninitialized_copy_forward(InputIterator first, InputIt
 template<class InputIterator, class ForwardIterator>
 inline ForwardIterator __uninitialized_copy_aux_backward(InputIterator first, InputIterator last, ForwardIterator result, __true_type) 
 {
-    return copy_backward(first, last, result);
+    return ustl::copy_backward(first, last, result);
 }
 
 template<class InputIterator, class ForwardIterator>

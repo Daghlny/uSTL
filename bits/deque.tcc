@@ -20,7 +20,9 @@ namespace ustl {
 
 /****** constructors & destructors *********/
 template<class T, class Allocator>
-deque<T, Allocator>::deque(): M_map(NULL), M_map_size(0) {}
+deque<T, Allocator>::deque(): M_map(NULL), M_map_size(0) {
+    _M_initialize_M_map(0);
+}
 
 template<class T, class Allocator>
 deque<T, Allocator>::deque(size_t _num_elements)
@@ -52,6 +54,46 @@ deque<T, Allocator>::~deque()
         _M_destroy_nodes(M_start._m_node, M_finish._m_node + 1);
     }
     _M_deallocate_M_map();
+}
+
+/********* Iterators *********/
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::iterator
+deque<T, Allocator>::begin()
+{
+    return M_start;
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::iterator
+deque<T, Allocator>::end()
+{
+    return M_finish;
+}
+
+/********* Modifiers ********/
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::iterator
+deque<T, Allocator>::insert(iterator _pos, const value_type& _x) 
+{
+    return _M_insert(_pos, _x);
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::insert(iterator _pos, size_type _count, const value_type& _x)
+{
+    return _M_insert_aux(_pos, _count, _x);
+}
+
+template<class T, class Allocator>
+template<class InputIt>
+void
+deque<T, Allocator>::insert(iterator _pos, InputIt _first, InputIt _last)
+{
+    return _M_insert(_pos, _first, _last, typename std::is_integral<InputIt>::type());
 }
 
 /********* Memory Conductions *********/
@@ -109,7 +151,9 @@ deque<T, Allocator>::_M_create_nodes(map_pointer nstart, map_pointer nfinish)
     map_pointer cur;
     for (cur = nstart; cur != nfinish; ++cur) {
         *cur = elt_allocator::allocate( __deque_buf_size(sizeof(T)) );
-        elt_allocator::construct(*cur, *cur+__deque_buf_size(sizeof(T)));
+        pointer it = *cur;
+        while (it != *cur+_S_buffer_size())
+            elt_allocator::construct(it++, T());
     }
 }
 
@@ -137,7 +181,7 @@ deque<T, Allocator>::_M_destroy_nodes(map_pointer nstart, map_pointer nfinish)
 // this function is in deque.tcc:622
 template<class T, class Allocator>
 typename deque<T, Allocator>::iterator
-deque<T, Allocator>::__insert(iterator pos, const T& _x)
+deque<T, Allocator>::_M_insert(iterator pos, const T& _x)
 {
 
 }
@@ -211,6 +255,24 @@ deque<T, Allocator>::_M_insert_aux(iterator _pos, InputIt _first, InputIt _last,
             ustl::copy(_first, mid, _pos);
         }
     }
+}
+
+//_M_insert(_pos, _count, _x, typename std::is_integral<InputIt>::type());
+
+template<class T, class Allocator>
+template<class InputIt>
+void
+deque<T, Allocator>::_M_insert(iterator _pos, InputIt _first, InputIt _last, std::true_type)
+{
+    _M_insert_aux(_pos, size_type(_first), _last);
+}
+
+template<class T, class Allocator>
+template<class InputIt>
+void
+deque<T, Allocator>::_M_insert(iterator _pos, InputIt _first, InputIt _last, std::false_type)
+{
+    _M_range_insert_aux(_pos, _first, _last);
 }
 
 template<class T, class Allocator>
@@ -292,8 +354,8 @@ deque<T, Allocator>::_M_reallocate_map(size_type __nodes_to_add, bool __add_at_f
         M_map_size = __new_map_size;
     }
 
-    M_start._M_set_node(__new_nstart);
-    M_finish._M_set_node(__new_nstart+__old_num_nodes-1);
+    M_start._m_set_node(__new_nstart);
+    M_finish._m_set_node(__new_nstart+__old_num_nodes-1);
 }
 
 /*

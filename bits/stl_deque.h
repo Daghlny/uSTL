@@ -61,6 +61,7 @@ class __deque_iterator {
 
         /* Operators */
         static size_t __buffer_size() { return __deque_buf_size(sizeof(T)); }
+        static size_type _S_buffer_size() { return __deque_buf_size(sizeof(T)); }
 
         void _m_set_node(map_pointer new_node) 
         {
@@ -103,9 +104,10 @@ class __deque_iterator {
             return tmp;
         }
 
-        _Self& operator+=(difference_type n) 
+        _Self& operator+=(difference_type _n) 
         {
             /* this implementation is complicated, for a concise version refer to G++'s codes */
+            /*
             const difference_type curr_offset = _m_cur - _m_first;
             elt_pointer _tmp_new_pos = _m_cur + n;
             if (_tmp_new_pos < _m_last && _tmp_new_pos >= _m_first) {
@@ -122,6 +124,17 @@ class __deque_iterator {
                 size_type skip_elmt_num = remain_elts % __buffer_size();
                 _m_set_node(_m_node + skip_node_num);
                 _m_cur = _m_first + skip_elmt_num;
+            }
+            */
+            const difference_type offset = _n + (_m_cur - _m_first);
+            if (offset >= 0 && offset < difference_type(_S_buffer_size()))
+                _m_cur += _n;
+            else {
+                const difference_type node_offset = offset > 0 ? 
+                                                    offset / difference_type(_S_buffer_size()) :
+                                                    -difference_type( (-offset-1) / _S_buffer_size() ) -1 ;
+                _m_set_node(_m_node + node_offset);
+                _m_cur = _m_first + (offset - node_offset * difference_type(_S_buffer_size()));
             }
             return *this;
         }
@@ -154,6 +167,14 @@ class __deque_iterator {
             return !(*this == rhs);
         }
 };
+
+template<class T>
+inline typename __deque_iterator<T>::difference_type
+operator-(const __deque_iterator<T>& _x, const __deque_iterator<T>& _y)
+{
+    return typename __deque_iterator<T>::difference_type(__deque_iterator<T>::_S_buffer_size()) *
+           (_x._m_node - _y._m_node - 1) + (_x._m_cur - _x._m_first) + (_y._m_last - _y._m_cur);
+}
 
 
 template<class T, class Allocator = ustl::allocator<T> >
@@ -192,14 +213,29 @@ class deque {
         reference front();
         reference back();
 
+        /* Iterators */
+        iterator begin();
+        iterator end();
+        iterator cbegin();
+        iterator cend();
+        iterator rbegin();
+        iterator rend();
+        iterator crbegin();
+        iterator crend();
+
         /* Capacity */
-        size_t size() { return M_map_size; }
+        bool        empty();
+        size_t      size() { return M_map_size; }
+        size_type   max_size();
+        void        shrink_to_fit();
 
         /* modifiers */
-        void clear();
-        iterator insert(iterator pos, const T& value);
-        void insert(iterator pos, size_type count, const T& value);
-        template<class InputIt> void insert(iterator pos, InputIt first, InputIt last);
+        void  clear();
+
+        iterator                        insert(iterator pos, const T& value);
+        void                            insert(iterator pos, size_type count, const T& value);
+        template<class InputIt> void    insert(iterator pos, InputIt first, InputIt last);
+
         iterator erase(iterator pos);
         iterator erase(iterator first, iterator last);
 
@@ -239,10 +275,13 @@ class deque {
 
 
         /* inner insert */
-        iterator __insert(iterator pos, const T& _x);
+        iterator                        _M_insert(iterator pos, const T& _x);
+        template<class InputIt> void    _M_insert(iterator pos, InputIt _first, InputIt _last, std::true_type);
+        template<class InputIt> void    _M_insert(iterator pos, InputIt _first, InputIt _last, std::false_type);
+
         void _M_insert_aux(iterator pos, size_type _n, const value_type& _x);
-        template<class InputIt> void _M_insert_aux(iterator _pos, InputIt _first, InputIt _last, size_type _n);
         template<class InputIt> void _M_range_insert_aux(iterator pos, InputIt _first, InputIt _last);
+        template<class InputIt> void _M_insert_aux(iterator _pos, InputIt _first, InputIt _last, size_type _n);
 
         /* inner capacity check */
         bool __touch_start(size_type _insert_n);
