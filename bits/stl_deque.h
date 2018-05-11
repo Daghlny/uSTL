@@ -50,7 +50,7 @@ class __deque_iterator {
         /* constructors */
         __deque_iterator() : _m_cur(), _m_first(), _m_last(), _m_node() {}
         __deque_iterator(elt_pointer x, map_pointer y) : 
-            _m_cur(x), _m_first(y), _m_last(*y + __deque_buf_size(sizeof(T))), _m_node(y) {} 
+            _m_cur(x), _m_first(*y), _m_last(*y + __deque_buf_size(sizeof(T))), _m_node(y) {} 
         __deque_iterator(const _Self &x) : 
             _m_cur(x._m_cur), _m_first(x._m_first), _m_last(x._m_last), _m_node(x._m_node) {}
 
@@ -227,6 +227,8 @@ class deque {
 
         typedef __deque_iterator<T, reference, pointer>              iterator;
         typedef __deque_iterator<T, const_reference, const_pointer>  const_iterator;
+        typedef reverse_iterator_t<iterator>                         reverse_iterator;
+        typedef reverse_iterator_t<const_iterator>                   const_reverse_iterator;
 
 
         /* constructors */
@@ -234,13 +236,10 @@ class deque {
         explicit deque(size_t _elements_num) ;
         template<class InputIt> deque(InputIt first, InputIt last);
         deque(size_type count, const T& value);
+        deque(const _Self& other);
 
         /* destructor */
         ~deque();
-
-        /* Memory conductions */
-
-        void _M_insert_begin_nodes(size_t elements_num);
 
         /* element access */
         reference at(size_type index);
@@ -251,17 +250,17 @@ class deque {
         /* Iterators */
         iterator begin();
         iterator end();
-        const_iterator cbegin();
-        const_iterator cend();
-        iterator rbegin();
-        iterator rend();
-        iterator crbegin();
-        iterator crend();
+        const_iterator cbegin() const;
+        const_iterator cend() const;
+        reverse_iterator rbegin();
+        reverse_iterator rend();
+        const_reverse_iterator crbegin() const;
+        const_reverse_iterator crend() const;
 
         /* Capacity */
-        bool        empty();
-        size_t      size() { return M_map_size; }
-        size_type   max_size();
+        bool        empty() const { return size() == 0; }
+        size_t      size() const { return M_finish-M_start; }
+        size_type   max_size() const { return elt_allocator::max_size(); }
         void        shrink_to_fit();
 
         /* modifiers */

@@ -1,5 +1,6 @@
 
 #pragma once
+#include <iostream>
 
 //#include "stl_algorithm.h"
 
@@ -75,9 +76,8 @@ OutputIt copy(InputIt first, InputIt last, OutputIt d_first) {
 template<class BidirIt1, class BidirIt2>
 BidirIt2 copy_backward(BidirIt1 first, BidirIt1 last, BidirIt2 d_last) {
     BidirIt2 d_ret = d_last;
-    last--, d_last--;
     while (last != first) {
-        *(last--) = *(d_last--);
+        *(--d_last) = *(--last);
     }
     return d_ret;
 }

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <stdexcept> // for out-of-range
 #include <cstddef>
 #include <type_traits>
 #include <iostream>
@@ -36,15 +37,24 @@ deque<T, Allocator>::deque(InputIt first, InputIt last)
 {
     //TODO: finish this
     size_type __n = ustl::distance(first, last);
-    _M_initialize_M_map(__n);
-    insert(first, last);
+    _M_initialize_M_map(0);
+    insert(begin(), first, last);
 }
 
 template<class T, class Allocator>
 deque<T, Allocator>::deque(size_type count, const T& value)
 {
-    _M_initialize_M_map(count);
-    insert(count, value);
+    _M_initialize_M_map(0);
+    insert(begin(), count, value);
+}
+
+template<class T, class Allocator>
+deque<T, Allocator>::deque(const _Self& other)
+{
+    size_type length = other.size();
+    _M_initialize_M_map(0);
+    std::cout << size() << " " << length << std::endl;
+    insert(begin(), other.cbegin(), other.cend());
 }
 
 template<class T, class Allocator>
@@ -54,6 +64,42 @@ deque<T, Allocator>::~deque()
         _M_destroy_nodes(M_start._m_node, M_finish._m_node + 1);
     }
     _M_deallocate_M_map();
+}
+
+/********* Elements Access *********/
+//reference at(size_type index);
+//reference operator[](size_type index);
+//reference front();
+//reference back();
+
+template<class T, class Allocator>
+typename  deque<T, Allocator>::reference
+deque<T, Allocator>::at(size_type _idx)
+{
+    if (_idx < 0 || _idx >= size())
+        throw std::out_of_range("Out of Range(size:" + size() + ")");
+    return this->operator[](_idx);
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::reference
+deque<T, Allocator>::operator[](size_type _idx)
+{
+    return *(M_start+_idx);
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::reference
+deque<T, Allocator>::front()
+{
+    return *M_start;
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::reference
+deque<T, Allocator>::back()
+{
+    return *(M_finish-1);
 }
 
 /********* Iterators *********/
@@ -71,6 +117,65 @@ deque<T, Allocator>::end()
 {
     return M_finish;
 }
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::const_iterator
+deque<T, Allocator>::cbegin() const
+{
+    return const_iterator(M_start._m_cur, M_start._m_node);
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::const_iterator
+deque<T, Allocator>::cend() const
+{
+    return const_iterator(M_finish._m_cur, M_finish._m_node);
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::reverse_iterator
+deque<T, Allocator>::rbegin()
+{
+    return reverse_iterator(end());
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::reverse_iterator
+deque<T, Allocator>::rend()
+{
+    return reverse_iterator(begin());
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::const_reverse_iterator
+deque<T, Allocator>::crbegin() const
+{
+    return const_reverse_iterator(cend());
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::const_reverse_iterator
+deque<T, Allocator>::crend() const
+{
+    return const_reverse_iterator(cbegin());
+}
+
+/********* Capacity *********/
+
+template<class T, class Allocator>
+void        
+deque<T, Allocator>::shrink_to_fit()
+{
+    size_type map_length = M_finish._m_node - M_start._m_node + 1;
+    map_pointer new_map = map_allocator::allocate(map_length);
+    ustl::copy(M_start._m_node, M_finish._m_node, new_map);
+    map_allocator::deallocate(M_map);
+    M_map = new_map;
+    M_start._m_node = M_map;
+    M_finish._m_node = M_map+map_length-1;
+    M_map_size = map_length;
+}
+
 
 /********* Modifiers ********/
 
@@ -101,6 +206,7 @@ deque<T, Allocator>::insert(iterator _pos, InputIt _first, InputIt _last)
 /*
  * initialize _M_map with \num_elements elements
  * the initialized size of \_M_map is at least 8 defined by macro __USTL_DEQUE_INIT_MAP_SIZE
+ * not only allocate, but also construct
  */
 template<class T, class Allocator>
 void
@@ -109,7 +215,6 @@ deque<T, Allocator>::_M_initialize_M_map(size_t num_elements)
     size_type num_nodes = (num_elements / __deque_buf_size(sizeof(T)) + 1);
     M_map_size = ustl::max((size_t)__USTL_DEQUE_INIT_MAP_SIZE, size_t(num_nodes + 2 ));
     M_map = map_allocator::allocate(M_map_size);
-    //M_map = map_allocator::new_value(M_map_size, NULL);
 
     map_pointer nstart = M_map + (M_map_size - num_nodes) / 2;
     map_pointer nfinish = nstart + num_nodes;
@@ -121,20 +226,6 @@ deque<T, Allocator>::_M_initialize_M_map(size_t num_elements)
     M_finish._m_set_node(nfinish - 1);
     M_start._m_cur = M_start._m_first;
     M_finish._m_cur = M_finish._m_first + (num_elements % __deque_buf_size(sizeof(T)));
-}
-
-template<class T, class Allocator>
-void 
-deque<T, Allocator>::_M_insert_begin_nodes(size_t elements_num)
-{
-    size_type num_nodes = (elements_num / __deque_buf_size(sizeof(T)) + 1);
-    map_pointer new_M_map = map_allocator::allocate(num_nodes+M_map_size);
-    copy(new_M_map+num_nodes, M_map, M_map+M_map_size);
-    M_start._m_node = new_M_map+num_nodes;
-    M_finish._m_node = new_M_map+num_nodes+M_map_size;
-    map_allocator::deallocate(M_map);
-    M_map = new_M_map;
-    M_map_size = num_nodes+M_map_size;
 }
 
 template<class T, class Allocator>
