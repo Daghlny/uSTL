@@ -24,21 +24,21 @@ inline size_t __deque_buf_size(size_t __size)
     return (__size < __USTL_DEQUE_BUF_SIZE ? size_t (__USTL_DEQUE_BUF_SIZE / __size) : size_t(1)); 
 }
 
-template<class T>
+template<class T, class Ref, class Ptr>
 class __deque_iterator {
     public:
-        typedef __deque_iterator<T> _Self;
+        typedef __deque_iterator<T, Ref, Ptr> _Self;
         typedef T*                  elt_pointer; // element pointer
         typedef T**                 map_pointer; // M_map element pointer
 
-        typedef __deque_iterator<T>         iterator;
-        typedef __deque_iterator<const T>   const_iterator;
+        typedef __deque_iterator<T, T&, T*>               iterator;
+        typedef __deque_iterator<T, const T&, const T*>   const_iterator;
         
         /* for general iterator types */
         typedef ustl::random_access_iterator_tag    iterator_category;
         typedef T                                   value_type;
-        typedef T*                                  pointer;
-        typedef T&                                  reference;
+        typedef Ptr                                 pointer;
+        typedef Ref                                 reference;
         typedef size_t                              size_type;
         typedef ptrdiff_t                           difference_type;
 
@@ -106,26 +106,6 @@ class __deque_iterator {
 
         _Self& operator+=(difference_type _n) 
         {
-            /* this implementation is complicated, for a concise version refer to G++'s codes */
-            /*
-            const difference_type curr_offset = _m_cur - _m_first;
-            elt_pointer _tmp_new_pos = _m_cur + n;
-            if (_tmp_new_pos < _m_last && _tmp_new_pos >= _m_first) {
-                _m_cur = _tmp_new_pos;
-            } else if (_tmp_new_pos < _m_first) {
-                difference_type remain_elts = n - curr_offset;
-                size_type skip_node_num = remain_elts / __buffer_size() + 1;
-                size_type skip_elmt_num = remain_elts % __buffer_size();
-                _m_set_node(_m_node - skip_node_num);
-                _m_cur = _m_last - skip_elmt_num;
-            } else {
-                difference_type remain_elts = n - (_m_last-_m_cur);
-                size_type skip_node_num = remain_elts / __buffer_size() + 1;
-                size_type skip_elmt_num = remain_elts % __buffer_size();
-                _m_set_node(_m_node + skip_node_num);
-                _m_cur = _m_first + skip_elmt_num;
-            }
-            */
             const difference_type offset = _n + (_m_cur - _m_first);
             if (offset >= 0 && offset < difference_type(_S_buffer_size()))
                 _m_cur += _n;
@@ -159,21 +139,72 @@ class __deque_iterator {
         reference operator[](difference_type n) const 
         { return *(*this+n); }
 
-        bool operator==(const _Self& rhs) {
-            return _m_cur == rhs._m_cur;
-        }
-
-        bool operator!=(const _Self& rhs) {
-            return !(*this == rhs);
-        }
 };
 
-template<class T>
-inline typename __deque_iterator<T>::difference_type
-operator-(const __deque_iterator<T>& _x, const __deque_iterator<T>& _y)
+/*
+template<class T, class Ref, class Ptr>
+inline bool 
+operator==(const __deque_iterator<T, Ref, Ptr>& _x, const __deque_iterator<T, Ref, Ptr>& _y) 
 {
-    return typename __deque_iterator<T>::difference_type(__deque_iterator<T>::_S_buffer_size()) *
+    return _x._m_cur == _y._m_cur;
+}
+*/
+
+template<class T, class RefL, class PtrL, class RefR, class PtrR>
+inline bool 
+operator==(const __deque_iterator<T, RefL, PtrL>& _x, const __deque_iterator<T, RefR, PtrR>& _y)
+{
+    return _x._m_cur == _y._m_cur;
+}
+
+template<class T, class RefL, class PtrL, class RefR, class PtrR>
+inline bool 
+operator!=(const __deque_iterator<T, RefL, PtrL>& _x, const __deque_iterator<T, RefR, PtrR>& _y)
+{
+    return !(_x == _y);
+}
+
+template<class T, class RefL, class PtrL, class RefR, class PtrR>
+inline bool
+operator<(const __deque_iterator<T, RefL, PtrL>& _x, const __deque_iterator<T, RefR, PtrR>& _y)
+{
+    return (_x._m_node == _y._m_node) ? (_x._m_cur < _y._m_cur) : (_x._m_node < _y._m_node);
+}
+
+template<class T, class RefL, class PtrL, class RefR, class PtrR>
+inline bool
+operator>(const __deque_iterator<T, RefL, PtrL>& _x, const __deque_iterator<T, RefR, PtrR>& _y)
+{
+    return _y < _x;
+}
+
+template<class T, class RefL, class PtrL, class RefR, class PtrR>
+inline bool
+operator<=(const __deque_iterator<T, RefL, PtrL>& _x, const __deque_iterator<T, RefR, PtrR>& _y)
+{
+    return !(_y < _x);
+}
+
+template<class T, class RefL, class PtrL, class RefR, class PtrR>
+inline bool
+operator>=(const __deque_iterator<T, RefL, PtrL>& _x, const __deque_iterator<T, RefR, PtrR>& _y)
+{
+    return !(_x < _y);
+}
+
+template<class T, class RefL, class PtrL, class RefR, class PtrR>
+inline typename __deque_iterator<T, RefL, PtrL>::difference_type
+operator-(const __deque_iterator<T, RefL, PtrL>& _x, const __deque_iterator<T, RefR, PtrR>& _y)
+{
+    return typename __deque_iterator<T,RefL,PtrL>::difference_type(__deque_iterator<T,RefL,PtrL>::_S_buffer_size()) *
            (_x._m_node - _y._m_node - 1) + (_x._m_cur - _x._m_first) + (_y._m_last - _y._m_cur);
+}
+
+template<class T, class Ref, class Ptr>
+inline __deque_iterator<T, Ref, Ptr>
+operator+(ptrdiff_t _n, const __deque_iterator<T, Ref, Ptr>& _x)
+{
+    return _x+_n;
 }
 
 
@@ -187,12 +218,16 @@ class deque {
 
         typedef T**                              map_pointer;
         typedef T*                               pointer;
+        typedef const T*                         const_pointer;
         typedef T&                               reference;
+        typedef const T&                         const_reference;
         typedef size_t                           size_type;
         typedef T                                value_type;
         typedef std::ptrdiff_t                   difference_type;
 
-        typedef __deque_iterator<T>              iterator;
+        typedef __deque_iterator<T, reference, pointer>              iterator;
+        typedef __deque_iterator<T, const_reference, const_pointer>  const_iterator;
+
 
         /* constructors */
         deque();
@@ -216,8 +251,8 @@ class deque {
         /* Iterators */
         iterator begin();
         iterator end();
-        iterator cbegin();
-        iterator cend();
+        const_iterator cbegin();
+        const_iterator cend();
         iterator rbegin();
         iterator rend();
         iterator crbegin();
