@@ -66,6 +66,33 @@ deque<T, Allocator>::~deque()
     _M_deallocate_M_map();
 }
 
+/********* copy control ***********/
+template<class T, class Allocator>
+typename deque<T, Allocator>::_Self&
+deque<T, Allocator>::operator=(const _Self& _rhs)
+{
+    clear();
+    this->insert(begin(), _rhs.cbegin(), _rhs.cend());
+    return *this;
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::assign(size_type _count, const value_type& _x)
+{
+    clear();
+    this->insert(begin(), size_type(_count), _x);
+}
+
+template<class T, class Allocator>
+template<class InputIt>
+void
+deque<T, Allocator>::assign(InputIt _first, InputIt _last)
+{
+    clear();
+    this->insert(begin(), _first, _last);
+}
+
 /********* Elements Access *********/
 //reference at(size_type index);
 //reference operator[](size_type index);
@@ -201,6 +228,93 @@ deque<T, Allocator>::insert(iterator _pos, InputIt _first, InputIt _last)
     return _M_insert(_pos, _first, _last, typename std::is_integral<InputIt>::type());
 }
 
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::iterator
+deque<T, Allocator>::erase(iterator _pos) 
+{
+    return _M_erase(_pos);
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::iterator
+deque<T, Allocator>::erase(iterator _first, iterator _last)
+{
+    return _M_erase(_first, _last);
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::clear()
+{
+    _M_erase_at_end(begin());
+}
+
+template<class T, class Allocator>
+void 
+deque<T, Allocator>::push_back(const value_type& _x)
+{
+    iterator new_finish = _M_reserve_elements_at_back(1);
+    *M_finish = _x;
+    M_finish = new_finish;
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::pop_back()
+{
+    elt_allocator::destroy(end()-1, end());
+    --M_finish;
+}
+
+template<class T, class Allocator>
+void 
+deque<T, Allocator>::push_front(const value_type& _x)
+{
+    M_start = _M_reserve_elements_at_front(1);
+    *M_start = _x;
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::pop_front()
+{
+    elt_allocator::destroy(M_start, M_start+1);
+    ++M_start;
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::resize(size_type _count)
+{
+    this->resize(_count, T());
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::resize(size_type _count, const value_type& _x)
+{
+    size_type len = size();
+    if (len < _count)
+    {
+        iterator new_finish = _M_reserve_elements_at_back(_count-len);
+        ustl::uninitialized_fill_n(M_finish, _count-len, _x);
+        M_finish = new_finish;
+    } else if (len > _count) {
+        _M_erase_at_end(M_start+_count);
+    }
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::swap(_Self& _other)
+{
+    ustl::swap(this->M_map, _other.M_map);
+    ustl::swap(this->M_map_size, _other.M_map_size);
+    ustl::swap(this->M_start, _other.M_start);
+    ustl::swap(this->M_finish, _other.M_finish);
+}
+
 /********* Memory Conductions *********/
 
 /*
@@ -265,6 +379,21 @@ deque<T, Allocator>::_M_destroy_nodes(map_pointer nstart, map_pointer nfinish)
     }
 }
 
+template<class T, class Allocator>
+void
+deque<T, Allocator>::_M_destroy_data(iterator _first, iterator _last)
+{
+    for (map_pointer _node = _first._m_node; _node != _last._m_node; ++_node)
+        elt_allocator::destroy(*_node, *_node+_S_buffer_size());
+
+    if (_first._m_node != _last._m_node) {
+        elt_allocator::destroy(_first._m_cur, _first._m_last);
+        elt_allocator::destroy(_last._m_first, _last._m_cur);
+    } else {
+        elt_allocator::destroy(_first._m_cur, _last._m_cur);
+    }
+}
+
 /******** inner insert **********/
 
 // can't call _M_insert_aux(iterator, size_type, value_type) direcly, because this function will return a iterator
@@ -272,9 +401,17 @@ deque<T, Allocator>::_M_destroy_nodes(map_pointer nstart, map_pointer nfinish)
 // this function is in deque.tcc:622
 template<class T, class Allocator>
 typename deque<T, Allocator>::iterator
-deque<T, Allocator>::_M_insert(iterator pos, const T& _x)
+deque<T, Allocator>::_M_insert(iterator _pos, const T& _x)
 {
-
+    size_type index = _pos - begin();
+    if (_pos == begin())
+        push_front(_x);
+    else if (_pos == end())
+        push_back(_x);
+    else {
+        _M_insert_aux(_pos, 1, _x);
+    }
+    return begin()+index;
 }
 
 template<class T, class Allocator>
@@ -526,6 +663,68 @@ deque<T, Allocator>::_M_new_elements_at_back(size_type __new_elems)
     size_type __i;
     for (__i = 1; __i <= __new_nodes; ++__i)
         *(M_finish._m_node + __i) = elt_allocator::allocate(_S_buffer_size());
+}
+
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::iterator 
+deque<T,Allocator>::_M_erase(iterator _pos)
+{
+    iterator next = _pos;
+    ++next;
+    size_type index = _pos - begin();
+    if ( index < (size()>>1) ) 
+    {
+        // move the front part
+        ustl::move_backward(begin(), _pos, next);
+        pop_front();
+    } else {
+        // move the back part
+        ustl::move(next, end(), _pos);
+        pop_back();
+    }
+    return begin()+index;
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::iterator
+deque<T, Allocator>::_M_erase(iterator _first, iterator _last)
+{
+    const difference_type n = _last - _first;
+    const difference_type elems_before = _first-begin();
+    if (elems_before <= (size() - n)/2) {
+        // move the front part
+        ustl::move_backward(begin(), _first, _last);
+        _M_erase_at_begin(begin()+n);
+    } else {
+        // move the back part
+        ustl::move(_last, end(), _first);
+        _M_erase_at_end(end()-n);
+    }
+    return begin()+elems_before;
+
+}
+
+/*
+ * erases all elements in [begin(), _pos) or [_pos, end())
+ * and updates M_start or M_finish
+ */
+template<class T, class Allocator>
+void
+deque<T, Allocator>::_M_erase_at_begin(iterator _pos)
+{
+    _M_destroy_data(begin(), _pos);
+    _M_destroy_nodes(M_start._m_node, _pos._m_node);
+    M_start = _pos;
+}
+
+template<class T, class Allocator>
+void
+deque<T, Allocator>::_M_erase_at_end(iterator _pos)
+{
+    _M_destroy_data(_pos, end());
+    _M_destroy_nodes(_pos._m_node+1, M_finish._m_node);
+    M_finish = _pos;
 }
 
 }

@@ -32,7 +32,13 @@ int main(void)
         cout << *(it2++) << " ";
     cout << endl;
     cout << dq2[5] << " front:" << dq2.front() << " back:" << dq2.back() << endl;
-    dq2.shrink_to_fit();
+    
+    dq2.push_back(43);
+    it2 = dq2.crbegin();
+    while (it2 != dq2.crend())
+        cout << *(it2++) << " ";
+    cout << endl;
+    cout << dq2[5] << " front:" << dq2.front() << " back:" << dq2.back() << endl;
 
 
     return 0;

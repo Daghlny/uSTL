@@ -241,6 +241,11 @@ class deque {
         /* destructor */
         ~deque();
 
+        /* copy control */
+        _Self& operator=(const _Self& rhs);
+        void assign(size_type count, const value_type& x);
+        template<class InputIt> void assign(InputIt first, InputIt last);
+
         /* element access */
         reference at(size_type index);
         reference operator[](size_type index);
@@ -306,6 +311,7 @@ class deque {
 
         void _M_create_nodes (map_pointer nstart, map_pointer nfinish);
         void _M_destroy_nodes(map_pointer nstart, map_pointer nfinish);
+        void _M_destroy_data(iterator _first, iterator _last);
 
 
         /* inner insert */
@@ -316,6 +322,13 @@ class deque {
         void _M_insert_aux(iterator pos, size_type _n, const value_type& _x);
         template<class InputIt> void _M_range_insert_aux(iterator pos, InputIt _first, InputIt _last);
         template<class InputIt> void _M_insert_aux(iterator _pos, InputIt _first, InputIt _last, size_type _n);
+
+        /* inner erase */
+        iterator _M_erase(iterator _pos);
+        iterator _M_erase(iterator _first, iterator _last);
+
+        void _M_erase_at_begin(iterator _pos);
+        void _M_erase_at_end(iterator _pos);
 
         /* inner capacity check */
         bool __touch_start(size_type _insert_n);
