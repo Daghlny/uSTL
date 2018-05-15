@@ -14,21 +14,30 @@ using std::endl;
 
 namespace ustl {
 
-template<class charT>
+template<class charT, class Allocator = ustl::allocator<charT>>
 class __string_base {
 public:
     typedef size_t               size_type;
+    typedef int                  ref_type;
     typedef charT*               pointer;
     typedef __string_base<charT> _Self;
 
+    static size_type _Ch_size() { return sizeof(charT); }
+
+    __string_base(size_type len);
+    ~__string_base();
+
 protected:
-    _Self* copy();
+    _Self*  copy();
+    void    _M_initialized_str(size_type len);
+    void    _M_reserve_cap(size_type cap);
+    void    _M_deallocate();
 
 private:
-    charT*      _str;
-    size_type   _len;
-    size_type   _capacity;
-    size_type   _use;
+    charT*      _M_str;
+    size_type   _M_len;
+    size_type   _M_capacity;
+    ref_type    _M_ref;
 };
 
 
