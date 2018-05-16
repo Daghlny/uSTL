@@ -23,18 +23,19 @@ public:
     typedef __string_base<charT> _Self;
 
     static size_type _Ch_size() { return sizeof(charT); }
+    static size_type max_size() { return Allocator::max_size(); }
 
     __string_base(size_type len);
     ~__string_base();
 
 protected:
-    _Self*  copy();
+    _Self*  deattach_and_new();
     void    _M_initialized_str(size_type len);
     void    _M_reserve_cap(size_type cap);
-    void    _M_deallocate();
+    void    _M_deref();
 
 private:
-    charT*      _M_str;
+    pointer     _M_str;
     size_type   _M_len;
     size_type   _M_capacity;
     ref_type    _M_ref;
@@ -46,7 +47,7 @@ class basic_string {
 
 public:
     typedef charT                                   value_type;
-    typedef int                                     size_type;
+    typedef size_t                                  size_type;
     typedef ptrdiff_t                               difference_type;
     typedef charT&                                  reference;
     typedef const charT&                            const_reference;
@@ -60,12 +61,22 @@ public:
 
     typedef basic_string<charT>                     _Self;
 
+    
+
+    static const size_type npos = static_cast<size_type>(-1);
+    enum { _S_local_capacity = 15/sizeof(charT) };
+    union {
+        charT       _M_local_buf[_S_local_capacity+1];
+        size_type   _M_allocated_capacity;
+    };
+
+    pointer _M_p;
+
     /* Constructors */
     basic_string();
     basic_string(size_type count, charT ch);
     basic_string(charT ch);
-    basic_string(const _Self& other, size_type pos, size_type count);
-    basic_string(const _Self& other, size_type pos);
+    basic_string(const _Self& other, size_type pos, size_type count); basic_string(const _Self& other, size_type pos);
     basic_string(const charT* s, size_type count);
     basic_string(const charT* s);
     template<class InputIt> basic_string(InputIt first, InputIt last);
@@ -116,7 +127,7 @@ public:
     size_type   capacity();
     void        shrink_to_fit();
 
-    /* Operations */
+    /* Modifiers */
     void        clear();
     _Self&      insert(size_type index, size_type count, charT ch);
     _Self&      insert(size_type index, const charT* s);
@@ -165,7 +176,54 @@ public:
     size_type   find_first_not_of(charT ch, size_type pos = 0) const;
 
 private:
-    __string_base *_M_ptr;
+    __string_base<charT, Allocator> *_M_base;
+
+    struct _Rep_base
+    {
+        size_type _M_length;
+        size_type _M_capacity;
+        _Atomic_word _M_refcount;
+    };
+
+    struct _Rep : _Rep_base
+    {
+        static const size_type _S_max_size;
+        static const charT     _S_terminal;
+        static size_type _S_empty_rep_storage[];
+        static _Rep& _S_empty_rep() {
+            void *_p = reinterpret_cast<void*>(&_S_empty_rep_storage);
+            return *reinterpret_cast<_Rep*>(_p);
+        }
+        bool _M_is_leaked() const { return this->_M_refcount < 0; }
+        bool _M_is_shared() const { return this->_M_refcount > 0; }
+        void _M_set_leaked()      { this->_M_refcount = -1; }
+        void _M_set_sharable()    { this->M_refcount = 0; }
+        charT* _M_refdata() { return reinterpret_cast<charT*>(this+1); }
+
+        void _M_set_length_and_sharable(size_type _n)
+        {
+            // __builtin_expect is a builtin function in gcc
+            // in GCC: if (__builtin_expect(this != &_S_empty_rep(), false)) {
+            if (this != &_S_empty_rep())
+                this->_M_set_sharable();
+                this->_M_length = _n;
+                this->_M_refdata()[_n] = _S_terminal;
+            }
+        }
+        charT* _M_grab() {
+            return !_M_is_leaked() ? _M_refcopy() : _M_clone();
+        }
+        void * _M_dispose() {
+            if (this != &_S_empty_rep())
+            {
+
+            }
+        }
+        // create and destroy
+        static _Rep* _S_create(size_type, size_type);
+        charT*  _M_clone(size_type _res = 0);
+        
+    }
 
 
 };
