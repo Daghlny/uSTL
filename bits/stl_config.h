@@ -6,3 +6,5 @@
 #define __STL_TEMPLATE_NULL
 #endif
 
+#define TERMINAL_CHAR 0
+

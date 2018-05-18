@@ -16,40 +16,42 @@ namespace ustl
 {
 
 template<class charT, class Allocator>
-__string_base<charT, Allocator>::__string_base(size_type _len):
+string_base<charT, Allocator>::string_base(size_type _len):
     _M_str(nullptr), _M_len(0), _M_capacity(0), _M_ref(0)
 {
     _M_str = Allocator::allocate(_Ch_size()*_len);
     _M_len = _len;
     _M_capacity = _len;
-    _M_ref = 0;
+    _M_ref = 1;
 }
 
 template<class charT, class Allocator>
-__string_base<charT, Allocator>::~__string_base()
+string_base<charT, Allocator>::~string_base()
 {
+    _M_deref();
     if (_M_str != nullptr)
         Allocator::deallocate(_M_str);
 }
 
 template<class charT, class Allocator>
-typename __string_base<charT, Allocator>::_Self*
-__string_base<charT, Allocator>::deattach_and_new()
+typename string_base<charT, Allocator>::_Self*
+string_base<charT, Allocator>::deattach_and_new()
 {
     // FIXME: the change of _M_ref should be automatic
-    _Self *new_base = new __string_base();
+    _Self *new_base = new string_base();
     new_base->_M_str = Allocator::allocate(_M_capacity);
     ustl::uninitialized_copy_forward(_M_str, _M_str+_M_len, new_base->_M_str);
     new_base->_M_len = _M_len;
     new_base->_M_capacity = _M_capacity;
     new_base->_M_ref = 1;
+    this->_M_deref();
 
     return new_base;
 }
 
 template<class charT, class Allocator>
 void
-__string_base<charT, Allocator>::_M_deref()
+string_base<charT, Allocator>::_M_deref()
 {
     if (_M_ref > 0) 
         --_M_ref;
@@ -60,7 +62,7 @@ __string_base<charT, Allocator>::_M_deref()
 
 template<class charT, class Allocator>
 void
-__string_base<charT, Allocator>::_M_reserve_cap(size_type _cap)
+string_base<charT, Allocator>::_M_reserve_cap(size_type _cap)
 {
     if (_cap > _M_capacity) 
     {
@@ -71,6 +73,44 @@ __string_base<charT, Allocator>::_M_reserve_cap(size_type _cap)
         _M_str = new_str;
         _M_capacity = _cap;
     }
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Rep*
+basic_string<charT, Allocator>::_Rep::_S_create(size_type _capacity, size_type _old_capacity)
+{
+    if (_capacity > _S_max_size)
+        throw "basic_string::_S_create";
+    const size_type pagesize = 4096;
+    const size_type malloc_header_size = 4*sizeof(void*);
+    if (_capacity > _old_capacity && _capacity < 2*_old_capacity)
+        _capacity = 2*_old_capacity;
+    size_type _size = (_capacity+1)*sizeof(charT)+sizeof(_Rep);
+    const size_type adj_size = _size + malloc_header_size;
+
+    if (adj_size > pagesize && _capacity > _old_capacity)
+    {
+        const size_type extra = pagesize - adj_size%pagesize;
+        _capacity += extra/sizeof(charT);
+        if (_capacity > _S_max_size)
+            _capacity = _S_max_size;
+        _size = (_capacity+1)*sizeof(charT)+sizeof(_Rep);
+    }
+    void *_place = Allocator::allocate(_size);
+    _Rep *p      = new (_plate) _Rep;
+    p->_M_capacity = _capacity;
+
+    p->_M_set_sharable();
+
+    return _p;
+}
+
+template<class charT, class Allocator>
+_charT*
+basic_string<charT, Allocator>::_Rep::_M_clone(size_type _res)
+{
+    const size_type requested_cap = this->_M_length + _res;
+    _Rep *r = _Rep::_S_create(requested_cap, this->_M_capacity);
 }
 
 /*******************************************/

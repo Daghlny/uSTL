@@ -43,7 +43,7 @@ class allocator{
             return true;
         }
 
-        size_type max_size() const {
+        static size_type max_size() {
             return size_type(UINT_MAX/sizeof(T));
         }
 
@@ -54,6 +54,9 @@ class allocator{
 
 template<class T>
 T* allocator<T>::allocate(size_type n, const void *_ptr) {
+    if (n > allocator<T>::max_size()) {
+        throw "require too much memory";
+    }
     if (n == 0) return 0;
     return static_cast<T*>(alloc::allocate(sizeof(T)*n));
 }

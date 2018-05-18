@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <limits>
 #include <stdexcept>
+#include <atomic>   // for atomic_long used in \ref_type
 
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"
@@ -15,24 +16,28 @@ using std::endl;
 namespace ustl {
 
 template<class charT, class Allocator = ustl::allocator<charT>>
-class __string_base {
+class string_base {
 public:
     typedef size_t               size_type;
-    typedef int                  ref_type;
+    typedef std::atomic_long     ref_type;
     typedef charT*               pointer;
-    typedef __string_base<charT> _Self;
+    typedef string_base<charT>   _Self;
 
     static size_type _Ch_size() { return sizeof(charT); }
     static size_type max_size() { return Allocator::max_size(); }
 
-    __string_base(size_type len);
-    ~__string_base();
+    string_base(size_type len);
+    ~string_base();
 
 protected:
     _Self*  deattach_and_new();
     void    _M_initialized_str(size_type len);
     void    _M_reserve_cap(size_type cap);
     void    _M_deref();
+
+    void    is_shared();
+
+    pointer date();
 
 private:
     pointer     _M_str;
@@ -42,7 +47,7 @@ private:
 };
 
 
-template<class charT>
+template<class charT, class Allocator>
 class basic_string {
 
 public:
@@ -59,7 +64,7 @@ public:
     typedef reverse_iterator_t<iterator>            reverse_iterator;
     typedef reverse_iterator_t<const_iterator>      const_reverse_iterator;
 
-    typedef basic_string<charT>                     _Self;
+    typedef basic_string<charT, Allocator>          _Self;
 
     
 
@@ -176,13 +181,13 @@ public:
     size_type   find_first_not_of(charT ch, size_type pos = 0) const;
 
 private:
-    __string_base<charT, Allocator> *_M_base;
+    string_base<charT, Allocator> _M_base;
 
     struct _Rep_base
     {
         size_type _M_length;
         size_type _M_capacity;
-        _Atomic_word _M_refcount;
+        std::atomic_long _M_refcount;
     };
 
     struct _Rep : _Rep_base
@@ -190,14 +195,16 @@ private:
         static const size_type _S_max_size;
         static const charT     _S_terminal;
         static size_type _S_empty_rep_storage[];
+
         static _Rep& _S_empty_rep() {
             void *_p = reinterpret_cast<void*>(&_S_empty_rep_storage);
             return *reinterpret_cast<_Rep*>(_p);
         }
+
         bool _M_is_leaked() const { return this->_M_refcount < 0; }
         bool _M_is_shared() const { return this->_M_refcount > 0; }
         void _M_set_leaked()      { this->_M_refcount = -1; }
-        void _M_set_sharable()    { this->M_refcount = 0; }
+        void _M_set_sharable()    { this->_M_refcount = 0;  }
         charT* _M_refdata() { return reinterpret_cast<charT*>(this+1); }
 
         void _M_set_length_and_sharable(size_type _n)
@@ -210,18 +217,25 @@ private:
                 this->_M_refdata()[_n] = _S_terminal;
             }
         }
+
         charT* _M_grab() {
             return !_M_is_leaked() ? _M_refcopy() : _M_clone();
         }
+
         void * _M_dispose() {
             if (this != &_S_empty_rep())
             {
 
             }
         }
+
         // create and destroy
-        static _Rep* _S_create(size_type, size_type);
-        charT*  _M_clone(size_type _res = 0);
+        static _Rep*    _S_create(size_type _cap, size_type _old_cap);
+        charT*          _M_clone(size_type _res = 0);
+        charT*          _M_refcopy() {
+            _M_refcount.fetch_add(1);
+            return _M_refdata();
+        }
         
     }
 
