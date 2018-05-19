@@ -1,25 +1,24 @@
 
-#ifndef _USTL_BASIC_STRING_H_
-#define _USTL_BASIC_STRING_H_
+#pragma once
 
+#include <iostream>
 #include <type_traits>
 #include <limits>
 #include <stdexcept>
-#include <cstddef>
 #include <atomic>   // for atomic_long used in \ref_type
 
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"
 
-namespace ustl {
+using std::cout;
+using std::endl;
 
-template<class charT, class Allocator> class basic_string;
+namespace ustl {
 
 /*
  * the real memory to store the charactors, use a lower-level to implemente COW
  */
-
-template<class charT, class Allocator = ustl::allocator<charT> >
+template<class charT, class Allocator = ustl::allocator<charT>>
 class string_base {
 public:
     typedef size_t               size_type;
@@ -27,35 +26,31 @@ public:
     typedef charT*               pointer;
     typedef string_base<charT>   _Self;
 
-    friend class basic_string<charT, Allocator>;
-
     static size_type _Ch_size() { return sizeof(charT); }
     static size_type max_size() { return Allocator::max_size(); }
 
-    string_base();
     string_base(size_type len);
     ~string_base();
 
 protected:
-    _Self*  deattach_and_new(size_type _len);
-    void    _M_reserve(size_type new_cap, size_type len);
-    pointer _M_insert(size_type index, size_type count, size_type len);
+    _Self*  deattach_and_new();
     void    _M_initialized_str(size_type len);
+    void    _M_reserve_cap(size_type cap);
     void    _M_deref();
-    void    _M_incref();
 
-    bool    is_shared();
+    void    is_shared();
 
-    pointer data();
+    pointer date();
 
 private:
     pointer     _M_str;
+    size_type   _M_len;
     size_type   _M_capacity;
     ref_type    _M_ref;
 };
 
 
-template<class charT, class Allocator = ustl::allocator<charT> >
+template<class charT, class Allocator>
 class basic_string {
 
 public:
@@ -77,20 +72,23 @@ public:
     
 
     static const size_type npos = static_cast<size_type>(-1);
+    enum { _S_local_capacity = 15/sizeof(charT) };
+    union {
+        charT       _M_local_buf[_S_local_capacity+1];
+        size_type   _M_allocated_capacity;
+    };
+
+    pointer _M_p;
 
     /* Constructors */
     basic_string();
     basic_string(size_type count, charT ch);
     basic_string(charT ch);
-
-    basic_string(const _Self& other);
-    basic_string(const _Self& other, size_type pos, size_type count); 
-    basic_string(const _Self& other, size_type pos);
-
+    basic_string(const _Self& other, size_type pos, size_type count); basic_string(const _Self& other, size_type pos);
     basic_string(const charT* s, size_type count);
     basic_string(const charT* s);
-
     template<class InputIt> basic_string(InputIt first, InputIt last);
+    basic_string(const _Self& other);
 
     /* Assignments */
     basic_string&   assign(size_type count, charT ch);
@@ -109,7 +107,7 @@ public:
     reference           at(size_type pos);
     const_reference     at(size_type pos) const;
     reference           operator[](size_type pos);
-    const_reference     operator[](size_type pos) const;
+    const_reference     operator[](size_type pos);
     reference           front();
     const_reference     front() const;
     reference           back();
@@ -120,21 +118,21 @@ public:
 
     /* Iterator */
     iterator                    begin();
-    const_iterator              cbegin() const;
+    const_iterator              cbegin();
     iterator                    end();
-    const_iterator              cend() const;
+    const_iterator              cend();
     reverse_iterator            rbegin();
     reverse_iterator            rend();
-    const_reverse_iterator      crbegin() const;
-    const_reverse_iterator      crend() const;
+    const_reverse_iterator      crbegin();
+    const_reverse_iterator      crend();
 
     /* Capacity */
-    bool        empty() const;
-    size_type   size() const;
-    size_type   length() const;
-    size_type   max_size() const;
+    bool        empty();
+    size_type   size();
+    size_type   length();
+    size_type   max_size();
     void        reserve();
-    size_type   capacity() const;
+    size_type   capacity();
     void        shrink_to_fit();
 
     /* Modifiers */
@@ -185,30 +183,11 @@ public:
     size_type   find_first_not_of(const charT* s, size_type pos = 0) const;
     size_type   find_first_not_of(charT ch, size_type pos = 0) const;
 
-protected:
-    enum { _S_local_capacity = 15/sizeof(charT) };
-    union {
-        charT       _M_local_buf[_S_local_capacity+1];
-        string_base<charT, Allocator> *_M_base;
-    };
-    pointer _M_p;
-    size_type   _M_len;
-
-    bool _M_is_local() const;
-
-
 private:
-    void _M_ensure_writable(size_type _requested_cap);
-
-    /*** insert ***/
-    void __insert(size_type index, size_type count, charT ch);
-    void __insert(size_type index, const charT* s, size_type s_len);
+    string_base<charT, Allocator> _M_base;
 
 
 };
 
 }
-
-#endif
-
 

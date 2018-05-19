@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <climits>
 #include "stl_alloc.imph.h"  // for alloc::allocate() and alloc::deallocate()
 #include "stl_type_traits.h"

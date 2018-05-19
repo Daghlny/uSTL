@@ -154,18 +154,7 @@ uninitialized_copy(const wchar_t* first, const wchar_t* last, wchar_t* result)
  * ***************************************************
  */
 
-template<class ForwardIterator, class T>
-inline void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x)
-{
-    __uninitialized_fill(first, last, x, __value_type(first));
-}
 
-template<class ForwardIterator, class T, class T1>
-inline void __uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x, T1*)
-{
-    typedef typename __type_traits<T1>::is_POD_type is_POD;
-    __uninitialized_fill_aux(first, last, x, is_POD());
-}
 
 template<class ForwardIterator, class T>
 inline void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last, const T& x, __true_type) 
@@ -180,6 +169,19 @@ inline void __uninitialized_fill_aux(ForwardIterator first, ForwardIterator last
     for (; cur != last; ++cur)
         allocator<T>::construct(&*cur, x);
 
+}
+
+template<class ForwardIterator, class T, class T1>
+inline void __uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x, T1*)
+{
+    typedef typename __type_traits<T1>::is_POD_type is_POD;
+    __uninitialized_fill_aux(first, last, x, is_POD());
+}
+
+template<class ForwardIterator, class T>
+inline void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x)
+{
+    __uninitialized_fill(first, last, x, __value_type(first));
 }
 
 }// end of namespace 

@@ -1,0 +1,24 @@
+
+/*
+ * @file include/list
+ * This is a uSTL header
+ */
+
+#ifndef _USTL_STRING
+#define _USTL_STRING
+
+#include "bits/algorithm.tcc"
+#include "bits/stl_iterator.h"
+#include "bits/stl_allocator.h"
+#include "bits/stl_simple_allocator.h"
+#include "bits/basic_string.h"
+#include "bits/basic_string.tcc"
+
+namespace ustl{
+
+    typedef ustl::basic_string<char> string;
+}
+
+
+#endif
+
