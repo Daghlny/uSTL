@@ -200,9 +200,19 @@ protected:
 private:
     void _M_ensure_writable(size_type _requested_cap);
 
+    /*** initialize ***/
+    void _M_initialize(const char* s, size_type index, size_type count);
+    void _M_initialize(const _Self& other, size_type index, size_type count);
+
     /*** insert ***/
+    template<class InputIt> iterator insert_aux(iterator, InputIt, InputIt, std::true_type);
+    template<class InputIt> iterator insert_aux(iterator, InputIt, InputIt, std::false_type);
+
+
     void __insert(size_type index, size_type count, charT ch);
-    void __insert(size_type index, const charT* s, size_type s_len);
+    void __insert(size_type index, const charT* s, size_type s_index, size_type s_count);
+    iterator __insert(iterator pos, size_type count, charT ch);
+    template<class InputIt> iterator __insert(iterator pos, InputIt first, InputIt last, size_type count);
 
 
 };
