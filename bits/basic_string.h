@@ -169,6 +169,10 @@ public:
     _Self&      operator+=(const charT* s);
 
     /* Search */
+    int         compare(const _Self& str) const;
+    int         compare(size_type pos1, size_type count1, const _Self& str, size_type pos2, size_type count2) const;
+    int         compare(const charT*s ) const;
+
     size_type   find(const _Self& str, size_type pos = 0) const;
     size_type   find(const charT* s, size_type pos, size_type count) const;
     size_type   find(const charT* s, size_type pos = 0) const;
@@ -208,6 +212,9 @@ private:
     void _M_initialize(const char* s, size_type index, size_type count);
     void _M_initialize(const _Self& other, size_type index, size_type count);
 
+    /*** _M_base operation ***/
+    void __base_deref();
+
     /*** insert ***/
     template<class InputIt> iterator insert_aux(iterator, InputIt, InputIt, std::true_type);
     template<class InputIt> iterator insert_aux(iterator, InputIt, InputIt, std::false_type);
@@ -221,6 +228,8 @@ private:
     /*** erase ***/
     void __erase(size_type index, size_type count);
 
+    /*** search ***/
+    int __compare(const charT* s1, const charT* s2, size_type len) const;
 };
 
 }

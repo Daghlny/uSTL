@@ -1,5 +1,5 @@
 
-#include "ustl_string"
+#include "string"
 #include <iostream>
 #include <vector>
 
@@ -31,6 +31,9 @@ int main(void)
     print(b, "b");
 
     ustl::string c = a.substr(0, 2);
+    print(c, "c");
+
+    c += a;
     print(c, "c");
     return 0;
 }

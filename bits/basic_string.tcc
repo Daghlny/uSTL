@@ -206,10 +206,7 @@ template<class charT, class Allocator>
 basic_string<charT, Allocator>::~basic_string()
 {
     if ( ! this->_M_is_local() ) {
-        _M_base->_M_deref();
-        if (!_M_base->is_leaked()){
-            delete _M_base;
-        }
+        this->__base_deref();
     }
 }
 
@@ -266,14 +263,10 @@ basic_string<charT, Allocator>::operator=(const _Self& other)
         _M_base = other._M_base;
         _M_base->_M_incref();
     } else if (!this->_M_is_local() && other._M_is_local()) {
-        _M_base->_M_deref();
-        if (_M_base->is_leaked())
-            delete _M_base;
+        this->__base_deref();
         ustl::copy(_M_local_buf, _M_local_buf+other.size(), other.data());
     } else {
-        _M_base->_M_deref();
-        if (_M_base->is_leaked())
-            delete _M_base;
+        this->__base_deref();
         _M_base = other._M_base;
         _M_base->_M_incref();
     }
@@ -575,6 +568,33 @@ basic_string<charT, Allocator>::substr(size_type pos, size_type count) const
     return res;
 }
 
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Self&
+basic_string<charT, Allocator>::operator+=(const _Self& _other) 
+{
+    this->_M_ensure_writable(size()+_other.size());
+    this->insert(end(), _other.cbegin(), _other.cend());
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Self&
+basic_string<charT, Allocator>::operator+=(charT ch) 
+{
+    this->_M_ensure_writable(size()+1);
+    *(_M_p+(_M_len++)) = ch;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Self&
+basic_string<charT, Allocator>::operator+=(const charT* s) 
+{
+    const size_type s_len = strlen(s);
+    this->_M_ensure_writable(size()+s_len);
+    int pos = 0;
+    for (; pos < s_len; ++pos)
+        this->push_back(s[pos]);
+}
+
 //////////////////////////
 // inner erase methods //
 //////////////////////////
@@ -667,6 +687,72 @@ basic_string<charT, Allocator>::__insert(iterator _pos, InputIt _first, InputIt 
 
 /*********** Search ************/
 
+template<class charT, class Allocator>
+int
+basic_string<charT, Allocator>::compare(const _Self& _str) const
+{
+    int len = ustl::min(size(), _str.size());
+    int res = __compare(data(), _str.data(), len);
+    if (res != 0)
+        return res;
+    else if (this->size() < _str.size())
+        return -1;
+    else if (this->size() >_str.size())
+        return 1;
+    return 0;
+}
+
+template<class charT, class Allocator>
+int
+basic_string<charT, Allocator>::compare(size_type _pos1, size_type _count1, const _Self& _str, size_type _pos2, size_type _count2) const
+{
+    int len = ustl::min(_count1, _count2);
+    int res = __compare(data()+_pos1, _str.data()+_pos2, len);
+    if (res != 0)
+        return res;
+    if (_count1 < _count2)
+        return -1;
+    if (_count1 > _count2)
+        return 1;
+    return 0;
+}
+
+template<class charT, class Allocator>
+int
+basic_string<charT, Allocator>::compare(const charT* s) const
+{
+    const size_type s_len = strlen(s);
+    int res = __compare(data(), s, ustl::min(s_len, this->size()));
+    if (res != 0)
+        return res;
+    if (this->size() < s_len)
+        return -1;
+    if (this->size() > s_len)
+        return 1;
+    return 0;
+}
+
+template<class charT, class Allocator>
+int 
+basic_string<charT, Allocator>::__compare(const charT* _s1, const charT* _s2, size_type _len) const
+{
+    int i = 0;
+    for (; i < _len; ++i) {
+        if (_s1[i] < _s2[i]) 
+            return -1;
+        else if (_s1[i] > _s2[i])
+            return 1;
+    }
+    return 0;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::find(const _Self& _other, size_type _pos) const
+{
+
+}
+
 /*********** Inner ***********/
 
 template<class charT, class Allocator>
@@ -701,6 +787,18 @@ basic_string<charT, Allocator>::_M_ensure_writable(size_type _requested_cap)
         }
         _M_base->_M_reserve(_requested_cap, _M_len);
         _M_p = _M_base->_M_str;
+    }
+}
+
+template<class charT, class Allocator>
+void
+basic_string<charT, Allocator>::__base_deref()
+{
+    _M_base->_M_deref();
+    // when _M_base is leaked, it has already deallocated _M_str in it
+    if (_M_base->is_leaked()) {
+        delete _M_base;
+        _M_base = NULL;
     }
 }
 
