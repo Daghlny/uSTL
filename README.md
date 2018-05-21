@@ -2,9 +2,9 @@
 A standard template library implementation only for studying purpose.
 This repository refers SGISTL(G++ version), which is in `/usr/include/c++/` defaultly.
 
-##Project Progress:
+## Project Progress:
 
-###basis
+### basis
 ```
 allocator: finish
 iterator:  finish
@@ -12,7 +12,7 @@ uninitialized conduction: finish
 algorithm: working(slow)
 ```
 
-###container
+### container
 ```
 vector: finish
 list:   finish
