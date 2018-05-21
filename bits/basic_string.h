@@ -45,6 +45,7 @@ protected:
     void    _M_incref();
 
     bool    is_shared();
+    bool    is_leaked();
 
     pointer data();
 
@@ -91,6 +92,9 @@ public:
     basic_string(const charT* s);
 
     template<class InputIt> basic_string(InputIt first, InputIt last);
+
+    /* Destructor */
+    ~basic_string();
 
     /* Assignments */
     basic_string&   assign(size_type count, charT ch);
@@ -213,7 +217,9 @@ private:
     void __insert(size_type index, const charT* s, size_type s_index, size_type s_count);
     iterator __insert(iterator pos, size_type count, charT ch);
     template<class InputIt> iterator __insert(iterator pos, InputIt first, InputIt last, size_type count);
-
+    
+    /*** erase ***/
+    void __erase(size_type index, size_type count);
 
 };
 

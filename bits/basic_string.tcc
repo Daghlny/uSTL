@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <cstddef>
 #include <atomic>   // for atomic_long used in \ref_type
+#include <cassert>
 
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"
@@ -36,8 +37,7 @@ template<class charT, class Allocator>
 string_base<charT, Allocator>::~string_base()
 {
     _M_deref();
-    if (_M_str != NULL)
-        Allocator::deallocate(_M_str);
+    assert(this->_M_str == NULL);
 }
 
 template<class charT, class Allocator>
@@ -112,6 +112,7 @@ string_base<charT, Allocator>::_M_deref()
         --_M_ref;
     else if (_M_ref == 0) {
         Allocator::deallocate(_M_str);
+        _M_str = NULL;
     }
 }
 
@@ -127,6 +128,13 @@ bool
 string_base<charT, Allocator>::is_shared()
 {
     return (_M_ref != 1);
+}
+
+template<class charT, class Allocator>
+bool
+string_base<charT, Allocator>::is_leaked()
+{
+    return (_M_ref == 0);
 }
 
 template<class charT, class Allocator>
@@ -192,6 +200,19 @@ basic_string<charT, Allocator>::basic_string(const _Self& _other, size_type _pos
     _M_initialize(_other, _pos, count);    
 }
 
+/* Destructor */
+
+template<class charT, class Allocator>
+basic_string<charT, Allocator>::~basic_string()
+{
+    if ( ! this->_M_is_local() ) {
+        _M_base->_M_deref();
+        if (!_M_base->is_leaked()){
+            delete _M_base;
+        }
+    }
+}
+
 // FIXME:
 // you should think clearly that the allocate and data copy is in which func, constructor or initialization ?
 template<class charT, class Allocator>
@@ -235,6 +256,30 @@ basic_string<charT, Allocator>::assign(size_type _count, charT _ch)
     insert(begin(), size_type(_count), charT(_ch));
 }
 
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Self&
+basic_string<charT, Allocator>::operator=(const _Self& other)
+{
+    if (this->_M_is_local() && other._M_is_local()) {
+        ustl::copy(other.data(), other.data()+other.size(), _M_p);
+    } else if (this->_M_is_local() && !other._M_is_local()) {
+        _M_base = other._M_base;
+        _M_base->_M_incref();
+    } else if (!this->_M_is_local() && other._M_is_local()) {
+        _M_base->_M_deref();
+        if (_M_base->is_leaked())
+            delete _M_base;
+        ustl::copy(_M_local_buf, _M_local_buf+other.size(), other.data());
+    } else {
+        _M_base->_M_deref();
+        if (_M_base->is_leaked())
+            delete _M_base;
+        _M_base = other._M_base;
+        _M_base->_M_incref();
+    }
+
+    return *this;
+}
 
 /*********** Element access ************/
 
@@ -380,6 +425,12 @@ basic_string<charT, Allocator>::capacity() const
     return _M_is_local() ? size_type(_S_local_capacity) : _M_base->_M_capacity;
 }
 
+template<class charT, class Allocator>
+void
+basic_string<charT, Allocator>::shrink_to_fit()
+{
+//FIXME: finish this function and add a private method to integrate the derefference
+}
 
 /*********** Modifiers ************/
 
@@ -423,6 +474,14 @@ basic_string<charT, Allocator>::insert(size_type _index, const charT* _s, size_t
     return *this;
 }
 
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Self&
+basic_string<charT, Allocator>::insert(size_type _index, const _Self& other)
+{
+    _M_ensure_writable(_M_len+other.size());
+    __insert(_index, other.data(), 0, other.size());
+    return *this;
+}
 
 template<class charT, class Allocator>
 typename basic_string<charT, Allocator>::_Self&
@@ -433,16 +492,6 @@ basic_string<charT, Allocator>::insert(size_type _index, const _Self& other,
     __insert(_index, other.data(), _a_index, _count);
     return *this;
 }
-
-template<class charT, class Allocator>
-typename basic_string<charT, Allocator>::_Self&
-basic_string<charT, Allocator>::insert(size_type _index, const _Self& other)
-{
-    _M_ensure_writable(_M_len+other.size());
-    __insert(_index, other.data(), 0, other.size());
-    return *this;
-}
-
 
 template<class charT, class Allocator>
 typename basic_string<charT, Allocator>::iterator
@@ -472,6 +521,83 @@ basic_string<charT, Allocator>::insert(iterator _pos, InputIt _first, InputIt _l
     return insert_aux(_pos, _first, _last, typename std::is_integral<InputIt>::type());
 }
 
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Self&
+basic_string<charT, Allocator>::erase(size_type _index, size_type _count)
+{
+    this->__erase(_index, _count);
+    return *this;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::iterator
+basic_string<charT, Allocator>::erase(iterator _pos)
+{
+    size_type index = _pos-begin();
+    this->__erase(index, 1);
+    return begin()+index;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::iterator
+basic_string<charT, Allocator>::erase(iterator _first, iterator _last)
+{
+    size_type index = _first-begin();
+    size_type count = ustl::distance(_first, _last);
+    this->__erase(index, count);
+    return begin()+index;
+}
+
+template<class charT, class Allocator>
+void
+basic_string<charT, Allocator>::push_back(charT ch)
+{
+    this->_M_ensure_writable(this->size() + 1);
+    *(_M_p + _M_len) = ch;
+    ++_M_len;
+}
+
+template<class charT, class Allocator>
+void
+basic_string<charT, Allocator>::pop_back()
+{
+    if (this->empty())
+        throw "pop the empty string";
+    this->_M_ensure_writable(this->size()-1);
+    --_M_len;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::_Self
+basic_string<charT, Allocator>::substr(size_type pos, size_type count) const
+{
+    _Self res(*this, pos, count);
+    return res;
+}
+
+//////////////////////////
+// inner erase methods //
+//////////////////////////
+
+template<class charT, class Allocator>
+void
+basic_string<charT, Allocator>::__erase(size_type _index, size_type _count)
+{
+    const size_type elems_after = size()-_index;
+    this->_M_ensure_writable(_M_len - _count);
+    if (elems_after < _count) {
+        _count = elems_after;
+    } else if (elems_after > _count){
+        iterator pos = this->begin()+_index;
+        ustl::copy(pos+_count, end(), pos);
+    }
+    _M_len -= _count;
+}
+
+
+//////////////////////////
+// inner insert methods //
+//////////////////////////
 template<class charT, class Allocator>
 template<class InputIt>
 typename basic_string<charT, Allocator>::iterator

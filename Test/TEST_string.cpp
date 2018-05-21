@@ -29,5 +29,8 @@ int main(void)
     print(a, "a");
     ustl::string b(a, 0, 3);
     print(b, "b");
+
+    ustl::string c = a.substr(0, 2);
+    print(c, "c");
     return 0;
 }
