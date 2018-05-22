@@ -30,10 +30,11 @@ int main(void)
     ustl::string b(a, 0, 3);
     print(b, "b");
 
-    ustl::string c = a.substr(0, 2);
+    ustl::string c = a;
     print(c, "c");
 
     c += a;
     print(c, "c");
     return 0;
 }
+

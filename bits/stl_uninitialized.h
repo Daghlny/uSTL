@@ -72,12 +72,12 @@ inline ForwardIterator __uninitialized_copy_aux_forward(InputIterator first, Inp
     return ustl::copy(first, last, result);
 }
 
-template<class InputIterator, class ForwardIterator>
-inline ForwardIterator __uninitialized_copy_aux_forward(InputIterator first, InputIterator last, ForwardIterator result, __false_type) 
+template<class InputIterator, class ForwardIterator, class T>
+inline ForwardIterator __uninitialized_copy_aux_forward(InputIterator first, InputIterator last, ForwardIterator result, __false_type, T*) 
 {
     ForwardIterator cur = result;
     for (; first != last; ++first, ++cur) 
-        construct(&*cur, *first);
+        ustl::allocator<T>::construct(&*cur, *first);
     return cur;
 }
 
@@ -85,7 +85,7 @@ template<class InputIterator, class ForwardIterator, class T>
 inline ForwardIterator __uninitialized_copy_forward(InputIterator first, InputIterator last, ForwardIterator result, T*) 
 {
     typedef typename __type_traits<T>::is_POD_type is_POD;
-    return __uninitialized_copy_aux_forward(first, last, result, is_POD());
+    return __uninitialized_copy_aux_forward(first, last, result, is_POD(),  static_cast<T*>(0));
 }
 
 template<class InputIterator, class ForwardIterator>
@@ -94,11 +94,11 @@ inline ForwardIterator __uninitialized_copy_aux_backward(InputIterator first, In
     return ustl::copy_backward(first, last, result);
 }
 
-template<class InputIterator, class ForwardIterator>
-inline ForwardIterator __uninitialized_copy_aux_backward(InputIterator first, InputIterator last, ForwardIterator result, __false_type) 
+template<class InputIterator, class ForwardIterator, class T>
+inline ForwardIterator __uninitialized_copy_aux_backward(InputIterator first, InputIterator last, ForwardIterator result, __false_type, T*) 
 {
     while (first != last)
-        construct(& (*(--result)), *(--last));
+        ustl::allocator<T>::construct(& (*(--result)), *(--last));
     return result;
 }
 
@@ -106,7 +106,7 @@ template<class InputIterator, class ForwardIterator, class T>
 inline ForwardIterator __uninitialized_copy_backward(InputIterator first, InputIterator last, ForwardIterator result, T*) 
 {
     typedef typename __type_traits<T>::is_POD_type is_POD;
-    return __uninitialized_copy_aux_backward(first, last, result, is_POD());
+    return __uninitialized_copy_aux_backward(first, last, result, is_POD(), static_cast<T*>(0));
 }
 
 
@@ -116,7 +116,7 @@ inline ForwardIterator __uninitialized_copy_backward(InputIterator first, InputI
 template<class InputIterator, class ForwardIterator>
 inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result) 
 {
-    return __uninitialized_copy(first, last, result, __value_type(result));
+    return __uninitialized_copy_forward(first, last, result, __value_type(result));
 }
 
 /*

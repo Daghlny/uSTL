@@ -1,34 +1,38 @@
 
-#include "../stl_vector.h"
+#include "vector"
 #include <iostream>
+
+using std::endl;
+using std::cout;
+
+struct F{
+    int n;
+    F(int _n): n(_n) {}
+    F(const F& f): n(f.n) {}
+};
+
+template<class T>
+int print(ustl::vector<T>& v, const char* vname)
+{
+    cout << vname << "(" << v.size() << "): ";
+    for (typename ustl::vector<T>::iterator it = v.begin(); it != v.end(); ++it)
+        cout << *it << " ";
+    cout << endl;
+    return 0;
+}
+
+template<class T>
+ustl::vector<T> get_vector(ustl::vector<T> v, int n)
+{
+    cout << "--------- get_vector ----------" << endl;
+    ustl::vector<T> vec(n, 0);
+    return vec;
+}
 
 int main(void)
 {
-    ustl::vector<int> vec1;
-    ustl::vector<int> vec2;
-
-    vec1.push_back(1);
-    vec1.push_back(2);
-    vec2.push_back(3);
-    vec2.push_back(4);
-
-    std::cout << vec1.size() << std::endl;
-    std::cout << vec1.capacity() << std::endl;
-    std::cout << vec1[1] << std::endl;
-
-    vec1.erase(vec1.begin()+1);
-
-    std::cout << vec1.size() << std::endl;
-    std::cout << vec1.capacity() << std::endl;
-
-    vec1.insert(vec1.begin(), 10, 2);
-
-    vec1.insert(vec1.begin()+5, 7);
-    vec1.erase(vec1.begin(), vec1.begin()+5);
-
-    for (int i = 0; i < vec1.size(); ++i)
-        std::cout << vec1[i] << " ";
-    std::cout << std::endl;
+    ustl::vector<F> v1 = {1,3,5,7,9};
+    ustl::vector<F> v2 = get_vector(v1, 10);
 
     return 0;
 }
