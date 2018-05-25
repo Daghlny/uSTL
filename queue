@@ -1,0 +1,19 @@
+
+
+/*
+ * @file include/queue
+ * This is a uSTL header
+ */
+
+#ifndef _USTL_QUEUE
+#define _USTL_QUEUE
+
+#include "bits/algorithm.tcc"
+#include "bits/stl_iterator.h"
+#include "bits/stl_allocator.h"
+#include "bits/stl_simple_allocator.h"
+#include "bits/stl_queue.h"
+
+
+#endif
+

@@ -251,6 +251,8 @@ class deque {
         reference operator[](size_type index);
         reference front();
         reference back();
+        const_reference front() const;
+        const_reference back() const;
 
         /* Iterators */
         iterator begin();

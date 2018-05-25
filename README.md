@@ -19,9 +19,9 @@ list:   finish
 deque:  finish
 string: finish
 
-stack:  ready for writing
-queue:  not work
-priority_queue: not work
+stack:  finish
+queue:  finish
+priority_queue: ready for writing
 
 unordered_set: not work
 set: not work

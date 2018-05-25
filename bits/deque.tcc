@@ -129,6 +129,20 @@ deque<T, Allocator>::back()
     return *(M_finish-1);
 }
 
+template<class T, class Allocator>
+typename deque<T, Allocator>::const_reference
+deque<T, Allocator>::front() const
+{
+    return *M_start;
+}
+
+template<class T, class Allocator>
+typename deque<T, Allocator>::const_reference
+deque<T, Allocator>::back() const
+{
+    return *(M_finish-1);
+}
+
 /********* Iterators *********/
 
 template<class T, class Allocator>
