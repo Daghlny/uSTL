@@ -1,0 +1,18 @@
+
+/*
+ * @file include/stack
+ * This is a uSTL header
+ */
+
+#ifndef _USTL_STACK
+#define _USTL_STACK
+
+#include "bits/algorithm.tcc"
+#include "bits/stl_iterator.h"
+#include "bits/stl_allocator.h"
+#include "bits/stl_simple_allocator.h"
+#include "bits/stl_stack.h"
+
+
+#endif
+
