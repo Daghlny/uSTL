@@ -4,7 +4,7 @@
 #include <limits>    // for numeric_limits
 #include <type_traits> // for is_integral
 #include <iostream>  // for debug
-#include <initializer_list>
+#include <initializer_list> // for initializer_list constructor
 
 #include "stl_allocator.h"
 #include "stl_uninitialized.h"

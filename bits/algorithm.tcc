@@ -121,5 +121,21 @@ move_backward(B1 _first, B1 _last, B2 _result)
     return _result;
 }
 
+/**********************************************/
+/************** find_first_of  ****************/
+/**********************************************/
+template<class ForwardIt1, class ForwardIt2>
+ForwardIt1 find_first_of(ForwardIt1 _first, ForwardIt1 _last, ForwardIt2 _s_first, ForwardIt2 _s_last)
+{
+    while (_first < _last) {
+        ForwardIt2 pos = _s_first;
+        for(; pos < _s_last; ++pos)
+            if (*pos == *_first)
+                return _first;
+        ++_first;
+    }
+    return _last;
+}
+
 }
 

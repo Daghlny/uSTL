@@ -750,7 +750,194 @@ template<class charT, class Allocator>
 typename basic_string<charT, Allocator>::size_type 
 basic_string<charT, Allocator>::find(const _Self& _other, size_type _pos) const
 {
+    return __find(_other.data(), _pos, _other.size());
+}
 
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::find(const charT* _s, size_type _pos, size_type _count) const
+{
+    return __find(_s, _pos, _count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::find(const charT* _s, size_type _pos) const
+{
+    size_type count = strlen(_s);
+    return __find(_s, _pos, count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::find(charT ch, size_type _pos) const
+{
+    const size_type size = this->size();
+    for (; _pos < size; ++_pos)
+        if (_M_p[_pos] == ch)
+            return _pos;
+    return npos;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::__find(const charT* _s, size_type _pos, size_type _count) const 
+{
+    // O(n*m) for GCC version, and using compare() method
+
+    const size_type size = this->size();
+    
+    if (_count == 0) 
+        return _pos <= size ? _pos : npos;
+
+    if (_count < size)
+    {
+        for (; _pos <= size - _count ; ++_pos) {
+            if (_M_p[_pos] == _s[0] && __compare(_M_p+_pos+1, _s+1, _count-1) == 0)
+                return _pos;
+        }
+    }
+    return npos;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::rfind(const _Self& _other, size_type _pos) const
+{
+    return __rfind(_other.data(), _pos, _other.size());
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::rfind(const charT* _s, size_type _pos, size_type _count) const
+{
+    return __rfind(_s, _pos, _count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::rfind(const charT* _s, size_type _pos) const
+{
+    size_type count = strlen(_s);
+    return __rfind(_s, _pos, count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type 
+basic_string<charT, Allocator>::rfind(charT ch, size_type _pos) const
+{
+    for (; _pos >= 0; --_pos)
+        if (_M_p[_pos] == ch)
+            return _pos;
+    return npos;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::__rfind(const charT* _s, size_type _pos, size_type _count) const
+{
+    const size_type size = this->size();
+    if (_count <= size) 
+    {
+        _pos = ustl::min(size-_count, _pos);
+        for (; _pos >= 0; --_pos) {
+            if (__compare(_M_p+_pos, _s, _count) == 0)
+                return _pos;
+        }
+    }
+    return npos;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_of(const _Self& _other, size_type _pos) const 
+{
+    return __find_first_of(_other.data(), _pos, _other.size());
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_of(const charT* _s, size_type _pos, size_type _count) const 
+{
+    return __find_first_of(_s, _pos, _count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_of(const charT* _s, size_type _pos) const 
+{
+    size_type count = strlen(_s);
+    return __find_first_of(_s, _pos, count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_of(charT ch, size_type _pos) const 
+{
+    return this->find(ch, _pos);
+}
+
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::__find_first_of(const charT* _s, size_type _pos, size_type _count) const
+{
+    const_iterator result = ustl::find_first_of(cbegin()+_pos, cend(), _s, _s+_count);
+    if (result == cend()) return npos;
+    size_type index = size_type(result - cbegin());
+    return index;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_not_of(const _Self& _other, size_type _pos) const
+{
+    return this->__find_first_not_of(_other.data(), _pos, _other.size());
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_not_of(const charT* _s, size_type _pos) const
+{
+    size_type count = strlen(_s);
+    return this->__find_first_not_of(_s, _pos, count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_not_of(const charT* _s, size_type _pos, size_type _count) const
+{
+    return this->__find_first_not_of(_s, _pos, _count);
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::find_first_not_of(charT _ch, size_type _pos) const
+{
+    const size_type size = this->size();
+    for (; _pos < size; ++_pos)
+        if (_M_p[_pos] != _ch)
+            return _pos;
+    return npos;
+}
+
+template<class charT, class Allocator>
+typename basic_string<charT, Allocator>::size_type
+basic_string<charT, Allocator>::__find_first_not_of(const charT* _s, size_type _pos, size_type _count) const
+{
+    const size_type size = this->size();
+    for (; _pos < size; ++_pos) {
+        size_type s_pos = 0;
+        int found = false;
+        for (; s_pos < _count; ++s_pos)
+            if (_s[s_pos] == _M_p[_pos]) {
+                found = true;
+                break;
+            }
+        if (!found)
+            return _pos;
+    }
+    return npos;
 }
 
 /*********** Inner ***********/

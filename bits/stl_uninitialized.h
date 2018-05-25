@@ -66,8 +66,8 @@ inline ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n, const
  */
 
 
-template<class InputIterator, class ForwardIterator>
-inline ForwardIterator __uninitialized_copy_aux_forward(InputIterator first, InputIterator last, ForwardIterator result, __true_type) 
+template<class InputIterator, class ForwardIterator, class T>
+inline ForwardIterator __uninitialized_copy_aux_forward(InputIterator first, InputIterator last, ForwardIterator result, __true_type, T*) 
 {
     return ustl::copy(first, last, result);
 }

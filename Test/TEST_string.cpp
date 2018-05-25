@@ -35,6 +35,21 @@ int main(void)
 
     c += a;
     print(c, "c");
+
+    ustl::string::size_type first_b_in_c = c.find(b);
+    ustl::string::size_type second_b_in_c = c.find(b, first_b_in_c+1);
+    cout << first_b_in_c << " " << second_b_in_c  << endl;
+
+    int pos = 0;
+    while (pos < c.size() && pos != ustl::string::npos)
+    {
+        pos = c.find_first_of(b, pos);
+        if (pos != ustl::string::npos)
+            cout << c[pos] << " ";
+        pos = pos+1;
+    }
+    cout << endl;
+
     return 0;
 }
 

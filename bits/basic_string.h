@@ -230,6 +230,10 @@ private:
 
     /*** search ***/
     int __compare(const charT* s1, const charT* s2, size_type len) const;
+    size_type __find(const charT* s, size_type pos, size_type count) const;
+    size_type __rfind(const charT* s, size_type pos, size_type count) const;
+    size_type __find_first_of(const charT* s, size_type pos, size_type count) const;
+    size_type __find_first_not_of(const charT* s, size_type pos, size_type count) const;
 };
 
 }

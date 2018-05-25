@@ -9,7 +9,7 @@ This repository refers SGISTL(G++ version), which is in `/usr/include/c++/` defa
 allocator: finish
 iterator:  finish
 uninitialized conduction: finish
-algorithm: working(slow)
+algorithm: writing(slow)
 ```
 
 ### container
@@ -17,9 +17,9 @@ algorithm: working(slow)
 vector: finish
 list:   finish
 deque:  finish
-string: working(fast)
+string: finish
 
-stack:  not work
+stack:  ready for writing
 queue:  not work
 priority_queue: not work
 
