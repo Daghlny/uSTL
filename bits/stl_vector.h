@@ -70,6 +70,8 @@ public:
     /* element access */
     reference front() { return *begin(); }
     reference back() { return *(end() - 1); }
+    const_reference front() const { return *cbegin(); }
+    const_reference back() const { return *(cend() - 1); }
     reference at(size_type pos);
     const_reference at(size_type pos) const;
 

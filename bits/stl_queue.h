@@ -7,7 +7,10 @@
 #include "stl_iterator.h"
 #include "stl_simple_allocator.h"
 #include "stl_allocator.h"
+#include "stl_heap.h"
 #include "algorithm.tcc"
+#include "stl_vector.h"
+#include "vector.tcc"
 
 namespace ustl {
 
@@ -51,14 +54,15 @@ class priority_queue
 {
     public:
         typedef Container                   container_type;
-        typedef Container::value_type       value_type;
-        typedef Container::size_type        size_type;
-        typedef Container::reference        reference;
-        typedef Container::const_reference  const_reference;
+        typedef typename Container::value_type       value_type;
+        typedef typename Container::size_type        size_type;
+        typedef typename Container::reference        reference;
+        typedef typename Container::const_reference  const_reference;
 
         typedef priority_queue<T, Container, Compare> _Self;
 
-        priority_queue(const _Self& other): c(other.c), compare(other.cmp){}
+        priority_queue(){}
+        priority_queue(const _Self& other): c(other.c), cmp(other.cmp){}
         _Self& operator=(const _Self& other){ 
             c = other.c; 
             cmp = other.cmp; 

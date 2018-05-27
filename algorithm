@@ -1,0 +1,14 @@
+
+/*
+ * @file include/list
+ * This is a uSTL header
+ */
+
+#ifndef _USTL_ALGORITHM
+#define _USTL_ALGORITHM
+
+#include "bits/algorithm.tcc"
+
+
+#endif
+

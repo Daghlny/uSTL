@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <stdexcept> // for out-of-range
 #include <limits>    // for numeric_limits
 #include <type_traits> // for is_integral
