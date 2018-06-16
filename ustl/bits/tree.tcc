@@ -3,13 +3,15 @@
 
 namespace ustl {
 
-/*******************************
- *              _node
- *              /   \
- *             /     \
- *      left_node   right_node
- *
- *******************************/
+/************************************************************************************
+ *              _node                                right_node                     * 
+ *              /   \                                    /   \                      *
+ *             /     \            rotate_left           /     \                     *         
+ *      left_node   right_node   ==============>     _node    RR                    *
+ *        /   \      /    \                          /   \                          *
+ *      LL    LR    RL    RR                  left_node   RL                        *
+ *                                                                                  *
+ ************************************************************************************/
 static void
 local_RB_tree_rotate_left(RB_tree_node_base* const _node, RB_tree_node_base*& _root)
 {
@@ -33,7 +35,22 @@ local_RB_tree_rotate_left(RB_tree_node_base* const _node, RB_tree_node_base*& _r
 static void
 local_RB_tree_rotate_right(RB_tree_node_base* const _x, RB_tree_node_base*& _root)
 {
-    //FIXME: finish this function
+    RB_tree_node_base* const left_node = _node->_M_left;
+
+    _node->_M_left = left_node->_M_right;
+    if (left_node->_M_right != NULL)
+        left_node->_M_right->_M_parent = _node;
+    left_node->_M_parent = _node->_M_parent;
+
+    if (_node == _root)
+        _root = left_node;
+    else if (_node == _node->_M_parent->_M_left)
+        _node->_M_parent->_M_left = left_node;
+    else if (_node == _node->_M_parent->_M_right)
+        _node->_M_parent->_M_right = left_node;
+
+    left_node->_M_right = _node;
+    _node->_M_parent = left_node;
 }
 
 void 
