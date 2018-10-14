@@ -3,6 +3,7 @@
 *.txt
 *.swp
 tags
+.idea/*
 
 .vs/*
 Debug/*
