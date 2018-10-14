@@ -53,6 +53,8 @@ local_RB_tree_rotate_right(RB_tree_node_base* const _x, RB_tree_node_base*& _roo
     _node->_M_parent = left_node;
 }
 
+
+//FIXME: finish this function by using local_RB_tree_rotate_left and local_RB_tree_rotate_right
 void 
 RB_tree_insert_and_rebalance(const bool _insert_left, RB_tree_node_base *_x, RB_tree_node_base *_p, RB_tree_node_base& _header)
 {
@@ -138,33 +140,71 @@ RB_tree<K,V,KeyOfValue,Compare,Allocator>::_M_reset() {
 }
 
 /*
- * @_x is the insert node
+ * NOTICE: this is NOT a method of RB_tree
+ * @_x is the insert node which has already allocated
  * @_p is the
  */
 void
-RB_tree_insert_and_rebalance(const bool _insert_left, RB_tree_node_base* _x, RB_tree_node_base* _p, RB_tree_node_base& _header)
+RB_tree_insert_and_rebalance(const bool _insert_left, RB_tree_node_base* _node, RB_tree_node_base* _parent, RB_tree_node_base& _header)
 {
     //FIXME: finish this method
+    RB_tree_node_base *&root = _header._M_parent;
+
+    _node->_M_parent = _parent;
+    _node->_M_left = _node->_M_right = NULL;
+    _node->_M_color = _S_red;
+
+    if (_insert_left) {
+        // insert to _parent's left
+        _parent->_M_left = _node;
+        if (_parnet == &_header) {
+            _header._M_parent = _node;
+            _header._M_right  = _node;
+        } else if (_parent == _header._M_left) 
+            _header._M_left = _node;
+    } else {
+        // insert to _parent's right
+        _parent->_M_right = _node;
+        if (_parent == _header._M_right)
+            _header._M_right = _node;
+    }
+
+    // rebalance
+    while (_node != root && _node->_M_parent->_M_color == _S_red)
+    {
+        //FIXME: finish this loop
+        if (_node->_M_parent == grandparent->_M_left)
+        {
+
+        } else {
+            
+        }
+
+    }
+
+    root->_M_color = _S_black;
 }
 
 // return value is a pair<A, B>
+// if B is NULL, it means there is already a node in RB_tree whose key is _k
 template<class K, class V, class KeyOfValue, class Compare, class Allocator>
 pair<typename RB_tree<K,V,KeyOfValue,Compare,Allocator>::base_ptr, RB_tree<K,V,KeyOfValue,Compare,Allocator>::base_ptr> 
 RB_tree<K,V,KeyOfValue,Compare,Allocator>::_M_get_insert_unique_pos(const key_type& _k)
 {
     typedef pair<base_ptr, base_ptr> Res_type;
-    link_type x = _M_begin();
+    link_type x = _M_begin(); // the root node
     link_type y = _M_end();
 
     bool comp = true;
 
-    while (x != 0) 
+    while (x != NULL) 
     {
         y = x;
         comp = _M_key_compare(_k, _S_key(x));
         x = comp ? x->_M_left : x->_M_right;
     }
 
+    // x is the insert node which must be leaf node, and y is its parent node
     iterator it = iterator(y);
     if (comp) {
         if (it == begin()) 
@@ -175,9 +215,20 @@ RB_tree<K,V,KeyOfValue,Compare,Allocator>::_M_get_insert_unique_pos(const key_ty
 
     if (_M_key_compare(_S_key(it._M_node), _k))
         return Res_type(x, y);
-    return Res_type(it._M_node, 0);
+
+    // in this situation, it means it._M_node >= _k and _k >= it._M_node
+    return Res_type(it._M_node, NULL);
 }
 
+template<class K, class V, class KeyOfValue, class Compare, class Allocator>
+ustl::pair<RB_tree<K,V,KeyOfValue,Compare,Allocator>::base_ptr, RB_tree<K,V,KeyOfValue,Compare,Allocator>::base_ptr>
+RB_tree<K,V,KeyOfValue,Compare,Allocator>::_M_get_insert_hint_unique_pos(const_iterator _pos, const key_type& _k)
+{
+
+}
+
+//FIXME: add the brief of this function
+//this function is the _M_insert_ one in G++
 template<class NodeGen> 
 template<class K, class V, class KeyOfValue, class Compare, class Allocator>
 typename RB_tree<K,V,KeyOfValue,Compare,Allocator>::iterator 
@@ -188,6 +239,25 @@ RB_tree<K,V,KeyOfValue,Compare,Allocator>::_M_insert(base_ptr _x, base_ptr _p, c
     RB_tree_insert_and_rebalance(insert_left, z, _p, this->_M_header);
     ++_M_node_count;
     return iterator(z);
+}
+
+/*
+ * @brief: insert a value of _x to RB_tree with the unique key
+ * if insert success, return pair<inserted iterator, true>
+ * else failed(there is already a key in RB_tree), return pair<the iterator pointed to the same key, false>
+ */
+template<class K, class V, class KeyOfValue, class Compare, class Allocator>
+ustl::pair<RB_tree<K,V,KeyOfValue,Compare,Allocator>::iterator, bool>
+RB_tree<K,V,KeyOfValue,Compare,Allocator>::_M_insert_unique(const value_type& _value)
+{
+    typedef pair<iterator, bool> res_type;
+    pair<base_ptr, base_ptr> res = _M_get_insert_unique_pos(KeyOfValue()(_value));
+
+    if (res.second) {
+        _Alloc_node an(*this);
+        return res_type(_M_insert(res.first, res.second, _value, an), true);
+    } else
+        return res_type(iterator(static_cast<link_type>(res.first)), false);
 }
 
 

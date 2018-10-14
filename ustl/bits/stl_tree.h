@@ -218,15 +218,14 @@ class RB_tree
         const_link_type _M_begin() const { return static_cast<const_link_type>(this->_M_header._M_parent); }
         const_link_type _M_end()   const { return static_cast<const_link_type>(&this->_M_header); }
 
-
-        const_link_type  _M_begin() const ;
-        const_link_type  _M_end()   const ;
-    
     private:
         pair<base_ptr, base_ptr> _M_get_insert_unique_pos(const key_type& k);
         pair<base_ptr, base_ptr> _M_get_insert_hint_unique_pos(const_iterator pos, const key_type& k);
 
         template<class NodeGen> iterator _M_insert(base_ptr x, base_ptr y, const value_type& v, NodeGen&);
+
+    public:
+        pair<iterator, bool> _M_insert_unique(const value_type& x);
 
 
         
